@@ -1,11 +1,10 @@
-// Hero.jsx
-import React from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { useNavigate } from 'react-router-dom';
-import 'swiper/swiper-bundle.css';
+import React from 'react'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { useNavigate } from 'react-router-dom'
+import 'swiper/swiper-bundle.css'
 
 const Hero = () => {
-  const navigate = useNavigate(); // Hook para navegação programática
+  const navigate = useNavigate()
 
   const novidades = [
     { 
@@ -32,16 +31,16 @@ const Hero = () => {
       description: 'Acabou de chegar o mais famoso álbum da banda Motley Crue.', 
       imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjf-L5VQhhy4FqbGyD59v1DnzPg5pSaR7pmg&s' 
     }
-  ];
+  ]
 
   const handleNovidadeClick = (id) => {
-    navigate(`/novidade/${id}`); 
-  };
+    navigate(`/novidade/${id}`)
+  }
 
   return (
-    <section className="bg-black text-white p-8">
+    <section className="bg-gray-900 text-white p-8 rounded-lg">
       <div className="container mx-auto">
-        <h1 className='text-3xl font-bold text-center mb-6'>A melhor loja de artigos musicais</h1>
+        <h1 className='text-3xl font-bold text-center mb-6'>Novidades da Semana</h1>
         
         <Swiper
           spaceBetween={30} 
@@ -61,7 +60,7 @@ const Hero = () => {
           {novidades.map((novidade, index) => (
             <SwiperSlide key={index}>
               <div 
-                className="bg-gray-800 p-6 rounded-lg shadow-md flex flex-col justify-between h-full cursor-pointer"
+                className="bg-black p-6 rounded-lg shadow-md flex flex-col justify-between h-full cursor-pointer"
                 onClick={() => handleNovidadeClick(novidade.id)} 
               >
                 <div className="overflow-hidden rounded-lg">
@@ -79,7 +78,7 @@ const Hero = () => {
         </Swiper>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default Hero;
+export default Hero

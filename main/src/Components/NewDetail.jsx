@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState } from 'react'
+import { useParams } from 'react-router-dom'
 
 const NewDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams()
 
-  const [cep, setCep] = useState('');
-  const [frete, setFrete] = useState(null);
+  const [cep, setCep] = useState('')
+  const [frete, setFrete] = useState(null)
 
   const novidades = [
     { 
@@ -40,7 +40,7 @@ const NewDetail = () => {
       price: 120.50,
       purchaseInfo: 'Envio rápido e seguro. Compre já.'
     }
-  ];
+  ]
 
   const novidade = novidades.find(nov => nov.id === parseInt(id, 10)); 
 
@@ -51,11 +51,11 @@ const NewDetail = () => {
 
   const handleBuyNow = () => {
     alert(`Você comprou: ${novidade.title}`);
-  };
+  }
 
   const handleAddToCart = () => {
     alert(`${novidade.title} foi adicionado ao carrinho.`);
-  };
+  }
 
   const handleFrete = () => {
  
@@ -66,16 +66,16 @@ const NewDetail = () => {
 
     const valorFrete = 10.00;
     setFrete(valorFrete);
-  };
+  }
 
   return (
     <section className="bg-black text-white min-h-screen flex flex-col items-center justify-center p-6">
       <div className="container mx-auto max-w-3xl text-center">
         <h2 className="text-3xl font-bold mb-6">{novidade.title}</h2>
         <img 
-          src={novidade.imageUrl} 
-          alt={novidade.title} 
-          className="w-full h-auto object-cover rounded-lg mb-6"
+           src={novidade.imageUrl} 
+           alt={novidade.title} 
+           className="w-3/4 md:w-1/2 lg:w-1/3 mx-auto h-auto object-cover rounded-lg mb-6"
         />
         <p className="text-lg text-gray-300 mb-4">{novidade.description}</p>
         <p className="text-2xl font-semibold text-yellow-500 mb-4">Preço: R$ {novidade.price.toFixed(2)}</p>
@@ -120,7 +120,7 @@ const NewDetail = () => {
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
 export default NewDetail;
