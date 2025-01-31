@@ -6,6 +6,9 @@ import MainPage from './Components/MainPage';
 import MainProductDetails from './Components/MainProductDetails';
 import Categories from './Components/Categories';
 import Footer from './Components/Footer';
+import Cart from './Components/Cart';
+import Profile from './Components/Profile';
+
 
 
 
@@ -19,9 +22,11 @@ function App() {
           </div>
         </div>
       <Routes>
+        <Route path="/carrinho" element={<Cart/>} />
         <Route path="/" element={<MainPage />} />
         <Route path="/novidade/:id" element={<NewDetail/>} /> 
         <Route path="/produto/:id" element={<MainProductDetails/>}/>
+        <Route path="/perfil" element={<Profile/>}/>
       </Routes>
       <Footer/>
     </div>
