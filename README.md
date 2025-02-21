@@ -29,7 +29,10 @@ Antes de rodar o projeto, você precisa ter as seguintes ferramentas instaladas 
 1. **Clone o repositório** (se ainda não tiver feito):
    ```bash
    git clone https://github.com/seu-repositorio/music-store-frontend.git
-### Inicie o servidor de desenvolvimento:
+2. **Instale as Dependências**
+   ```bash
+   npm i
+3. **Inicie o servidor de desenvolvimento:**
 ```bash
 npm start
 ```
