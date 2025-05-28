@@ -2,7 +2,7 @@
 
 ## Descrição
 
-O **Music Store** é uma aplicação desenvolvida em **React** que permite aos usuários explorar, visualizar e comprar artigos relacionados à música. O aplicativo fornece uma interface simples e intuitiva para navegar por uma coleção de produtos sobre diversos tópicos.
+O **Music Store** é uma aplicação desenvolvida em **React** que consiste em um modelo ux/ui que permite aos usuários explorar, visualizar e comprar artigos relacionados à música. O aplicativo fornece uma interface simples e intuitiva para navegar por uma coleção de produtos sobre diversos tópicos.
 
 ---
 
