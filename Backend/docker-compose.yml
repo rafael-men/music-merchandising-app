@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+
+  auth-db:
+    image: postgres:16-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - music-net
+
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - music-net
+
+volumes:
+  auth_db_data:
+  mongo_data:
+
+networks:
+  music-net:
+    driver: bridge
