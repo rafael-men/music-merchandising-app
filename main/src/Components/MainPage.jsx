@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import Hero from './Hero'
 
-//tipos da página
 
 const products = {
   deathMetal: [

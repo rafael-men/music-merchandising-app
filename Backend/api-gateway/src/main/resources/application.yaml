@@ -1,3 +1,93 @@
 spring:
   application:
     name: api-gateway
+
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: auth-service
+            uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+            predicates:
+              - Path=/users/**
+
+          - id: product-service
+            uri: ${PRODUCT_SERVICE_URL:http://localhost:8083}
+            predicates:
+              - Path=/products/**
+
+          - id: cart-service
+            uri: ${CART_SERVICE_URL:http://localhost:8082}
+            predicates:
+              - Path=/cart/**
+
+          - id: order-service
+            uri: ${ORDER_SERVICE_URL:http://localhost:8084}
+            predicates:
+              - Path=/orders/**
+
+          - id: notification-service
+            uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
+            predicates:
+              - Path=/notifications/**
+
+          - id: auth-service-docs
+            uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+            predicates:
+              - Path=/auth-service/v3/api-docs
+            filters:
+              - RewritePath=/auth-service/(?<remaining>.*), /${remaining}
+
+          - id: product-service-docs
+            uri: ${PRODUCT_SERVICE_URL:http://localhost:8083}
+            predicates:
+              - Path=/product-service/v3/api-docs
+            filters:
+              - RewritePath=/product-service/(?<remaining>.*), /${remaining}
+
+          - id: cart-service-docs
+            uri: ${CART_SERVICE_URL:http://localhost:8082}
+            predicates:
+              - Path=/cart-service/v3/api-docs
+            filters:
+              - RewritePath=/cart-service/(?<remaining>.*), /${remaining}
+
+          - id: order-service-docs
+            uri: ${ORDER_SERVICE_URL:http://localhost:8084}
+            predicates:
+              - Path=/order-service/v3/api-docs
+            filters:
+              - RewritePath=/order-service/(?<remaining>.*), /${remaining}
+
+          - id: notification-service-docs
+            uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
+            predicates:
+              - Path=/notification-service/v3/api-docs
+            filters:
+              - RewritePath=/notification-service/(?<remaining>.*), /${remaining}
+
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    max-http-header-size: 1048576
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /auth-service/v3/api-docs
+      - name: product-service
+        url: /product-service/v3/api-docs
+      - name: cart-service
+        url: /cart-service/v3/api-docs
+      - name: order-service
+        url: /order-service/v3/api-docs
+      - name: notification-service
+        url: /notification-service/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway

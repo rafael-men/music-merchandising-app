@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import CartImage from '../Assets/CartBlack.png'
 
 const Cart = () => {
+
   const [cartItems, setCartItems] = useState([
+    
     { 
       id: 1, 
       name: 'Mudvayne - LD.50 CD (Importado)', 
@@ -21,10 +23,10 @@ const Cart = () => {
       price: 130.00, 
       image: 'https://i.scdn.co/image/ab67616d0000b2732577f15af6777fff11a2a083' 
     }
-  ])
 
-  const [paymentMethod, setPaymentMethod] = useState('')
+  ]);
 
+  const [paymentMethod, setPaymentMethod] = useState('');
   const handleRemoveItem = (id) => {
     setCartItems(cartItems.filter(item => item.id !== id))
   }

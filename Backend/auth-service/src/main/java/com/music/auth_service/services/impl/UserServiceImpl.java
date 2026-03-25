@@ -14,6 +14,7 @@ import com.music.auth_service.services.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -27,25 +28,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException(request.email());
-        }
-        if (request.cpf() != null && userRepository.existsByCpf(request.cpf())) {
-            throw new CpfAlreadyExistsException(request.cpf());
-        }
-
-        Address address = null;
-        if (request.address() != null) {
-            address = new Address(
-                    request.address().street(),
-                    request.address().number(),
-                    request.address().complement(),
-                    request.address().neighborhood(),
-                    request.address().city(),
-                    request.address().state(),
-                    request.address().zipCode()
-            );
-        }
+        validateEmailAvailable(request.email());
+        Optional.ofNullable(request.cpf()).ifPresent(this::validateCpfAvailable);
 
         User user = new User(
                 null,
@@ -55,7 +39,7 @@ public class UserServiceImpl implements UserService {
                 request.cpf(),
                 request.profilePhotoUrl(),
                 Role.USER,
-                address
+                buildAddress(request.address())
         );
 
         return UserResponse.from(userRepository.save(user));
@@ -63,16 +47,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse findById(UUID id) {
-        User user = userRepository.findById(id)
+        return userRepository.findById(id)
+                .map(UserResponse::from)
                 .orElseThrow(() -> new UserNotFoundException(id));
-        return UserResponse.from(user);
     }
 
     @Override
     public UserResponse findByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-        return UserResponse.from(user);
+        return userRepository.findByEmail(email)
+                .map(UserResponse::from)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com email: " + email));
     }
 
     @Override
@@ -87,44 +71,52 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        if (request.email() != null && !request.email().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(request.email())) {
-                throw new EmailAlreadyExistsException(request.email());
-            }
-            user.setEmail(request.email());
-        }
+        applyEmailUpdate(request, user);
+        applyCpfUpdate(request, user);
 
-        if (request.cpf() != null && !request.cpf().equals(user.getCpf())) {
-            if (userRepository.existsByCpf(request.cpf())) {
-                throw new CpfAlreadyExistsException(request.cpf());
-            }
-            user.setCpf(request.cpf());
-        }
-
-        if (request.name() != null) user.setName(request.name());
-        if (request.password() != null) user.setPassword(request.password());
-        if (request.profilePhotoUrl() != null) user.setProfilePhotoUrl(request.profilePhotoUrl());
-
-        if (request.address() != null) {
-            user.setAddress(new Address(
-                    request.address().street(),
-                    request.address().number(),
-                    request.address().complement(),
-                    request.address().neighborhood(),
-                    request.address().city(),
-                    request.address().state(),
-                    request.address().zipCode()
-            ));
-        }
+        Optional.ofNullable(request.name()).ifPresent(user::setName);
+        Optional.ofNullable(request.password()).ifPresent(user::setPassword);
+        Optional.ofNullable(request.profilePhotoUrl()).ifPresent(user::setProfilePhotoUrl);
+        Optional.ofNullable(request.address()).map(this::buildAddress).ifPresent(user::setAddress);
 
         return UserResponse.from(userRepository.save(user));
     }
 
     @Override
     public void delete(UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException(id);
-        }
+        userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
         userRepository.deleteById(id);
+    }
+
+    private void validateEmailAvailable(String email) {
+        if (userRepository.existsByEmail(email)) throw new EmailAlreadyExistsException(email);
+    }
+
+    private void validateCpfAvailable(String cpf) {
+        if (userRepository.existsByCpf(cpf)) throw new CpfAlreadyExistsException(cpf);
+    }
+
+    private void applyEmailUpdate(UpdateUserRequest request, User user) {
+        Optional.ofNullable(request.email())
+                .filter(e -> !e.equals(user.getEmail()))
+                .ifPresent(e -> {
+                    validateEmailAvailable(e);
+                    user.setEmail(e);
+                });
+    }
+
+    private void applyCpfUpdate(UpdateUserRequest request, User user) {
+        Optional.ofNullable(request.cpf())
+                .filter(c -> !c.equals(user.getCpf()))
+                .ifPresent(c -> {
+                    validateCpfAvailable(c);
+                    user.setCpf(c);
+                });
+    }
+
+    private Address buildAddress(com.music.auth_service.dtos.AddressDTO dto) {
+        if (dto == null) return null;
+        return new Address(dto.street(), dto.number(), dto.complement(),
+                dto.neighborhood(), dto.city(), dto.state(), dto.zipCode());
     }
 }

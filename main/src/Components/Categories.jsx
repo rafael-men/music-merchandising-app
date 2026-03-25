@@ -14,6 +14,9 @@ const Categories = () => {
     { name: 'Presentes', link: '#' },
   ];
 
+
+  
+
   return (
     <div className="bg-black mb-2 shadow-md">
       <div className="container mx-auto px-4">
@@ -42,9 +45,7 @@ const Categories = () => {
               />
             </svg>
           </button>
-        </div>
-
-     
+        </div>     
         <div
           className={`flex flex-wrap justify-start mt-4 lg:mt-0 space-x-4 ${
             isMenuOpen ? 'block' : 'hidden'
@@ -65,5 +66,6 @@ const Categories = () => {
     </div>
   );
 };
+
 
 export default Categories;
