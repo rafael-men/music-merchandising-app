@@ -6,12 +6,13 @@ spring:
       uri: ${MONGODB_URI:mongodb://localhost:27017/notification_db}
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
-
 server:
   port: ${SERVER_PORT:8085}
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-  api-docs:
-    path: /v3/api-docs
+  tomcat:
+    max-http-header-size: 1048576
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true

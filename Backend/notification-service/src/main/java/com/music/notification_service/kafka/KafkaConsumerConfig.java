@@ -24,9 +24,7 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ConsumerConfig.GROUP_ID_CONFIG, "notification-service-group",
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer.getClass()
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"
         ), new StringDeserializer(), deserializer);
     }
 
