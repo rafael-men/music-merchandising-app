@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -86,6 +87,29 @@ public class UserServiceImpl implements UserService {
     public void delete(UUID id) {
         userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
         userRepository.deleteById(id);
+    }
+
+    @Override
+    public UserResponse addFavorite(UUID userId, String productId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        user.getFavoriteProductIds().add(productId);
+        return UserResponse.from(userRepository.save(user));
+    }
+
+    @Override
+    public UserResponse removeFavorite(UUID userId, String productId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        user.getFavoriteProductIds().remove(productId);
+        return UserResponse.from(userRepository.save(user));
+    }
+
+    @Override
+    public Set<String> getFavorites(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        return user.getFavoriteProductIds();
     }
 
     private void validateEmailAvailable(String email) {

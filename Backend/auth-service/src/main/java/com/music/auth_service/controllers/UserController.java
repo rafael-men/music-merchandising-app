@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -47,5 +48,22 @@ public class UserController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/favorites/{productId}")
+    public ResponseEntity<UserResponse> addFavorite(@PathVariable UUID id,
+                                                    @PathVariable String productId) {
+        return ResponseEntity.ok(userService.addFavorite(id, productId));
+    }
+
+    @DeleteMapping("/{id}/favorites/{productId}")
+    public ResponseEntity<UserResponse> removeFavorite(@PathVariable UUID id,
+                                                       @PathVariable String productId) {
+        return ResponseEntity.ok(userService.removeFavorite(id, productId));
+    }
+
+    @GetMapping("/{id}/favorites")
+    public ResponseEntity<Set<String>> getFavorites(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getFavorites(id));
     }
 }

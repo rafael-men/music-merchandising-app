@@ -1,7 +1,9 @@
 package com.music.auth_service.models;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -25,6 +27,11 @@ public class User {
     private Role role;
     @Embedded
     private Address address;
+
+    @ElementCollection
+    @CollectionTable(name = "user_favorites", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "product_id")
+    private Set<String> favoriteProductIds = new HashSet<>();
 
     public User() {}
 
@@ -102,6 +109,14 @@ public class User {
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public Set<String> getFavoriteProductIds() {
+        return favoriteProductIds;
+    }
+
+    public void setFavoriteProductIds(Set<String> favoriteProductIds) {
+        this.favoriteProductIds = favoriteProductIds;
     }
 
     @Override

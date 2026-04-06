@@ -1,41 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Clock, ArrowLeft } from 'lucide-react'
 import { allProducts } from '../data/catalog'
-import StockBadge from '../Components/StockBadge'
+import ProductCard from '../Components/ProductCard'
 
-const ProductCard = ({ product }) => (
-  <div className="group">
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-gray-600 transition-all duration-300 hover:shadow-lg hover:shadow-black/40 hover:-translate-y-0.5 flex flex-col h-full">
-      <div className="bg-black aspect-square w-full flex items-center justify-center overflow-hidden shrink-0">
-        <img
-          src={product.imageUrl}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-          alt={product.title}
-        />
-      </div>
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex flex-wrap gap-1 mb-2">
-          {product.categories.map((cat) => (
-            <span key={cat} className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
-              {cat}
-            </span>
-          ))}
-        </div>
-        <h5 className="text-sm font-semibold text-gray-100 leading-snug mb-2 line-clamp-2">{product.title}</h5>
-        <div className="mt-auto">
-          <p className="text-base font-bold text-green-400 mb-1">{product.price}</p>
-          <div className="mb-3"><StockBadge stock={product.stock} /></div>
-          <Link
-            to={`/produto/${product.id}`}
-            className="block text-center no-underline text-xs font-medium bg-white text-black py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-          >
-            Ver Detalhes
-          </Link>
-        </div>
-      </div>
-    </div>
-  </div>
-)
 
 const RecentlyViewed = () => {
   const viewedIds = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
@@ -71,7 +38,7 @@ const RecentlyViewed = () => {
         ) : (
           <>
             <p className="text-xs text-gray-500 mb-6">{products.length} {products.length === 1 ? 'produto' : 'produtos'} visitados</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

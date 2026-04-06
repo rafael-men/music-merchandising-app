@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingCart, User, Music2, Menu, X } from 'lucide-react'
+import { ShoppingCart, User, Music2, Menu, X, Heart } from 'lucide-react'
 
 const Navbar = () => {
   const [isMobileOpen, setMobileOpen] = useState(false)
@@ -14,6 +14,10 @@ const Navbar = () => {
         </Link>
 
         <div className='hidden md:flex items-center gap-6'>
+          <Link to="/favoritos" className='flex items-center gap-2 text-sm font-medium no-underline text-gray-300 hover:text-white transition-colors duration-200'>
+            <Heart size={18} />
+            <span>Favoritos</span>
+          </Link>
           <Link to="/carrinho" className='flex items-center gap-2 text-sm font-medium no-underline text-gray-300 hover:text-white transition-colors duration-200'>
             <ShoppingCart size={18} />
             <span>Carrinho</span>
@@ -31,6 +35,10 @@ const Navbar = () => {
 
       {isMobileOpen && (
         <div className="border-t border-gray-800 py-3 md:hidden">
+          <Link to="/favoritos" className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'>
+            <Heart size={16} />
+            <span>Favoritos</span>
+          </Link>
           <Link to="/carrinho" className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'>
             <ShoppingCart size={16} />
             <span>Carrinho</span>

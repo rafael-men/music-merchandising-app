@@ -3,6 +3,7 @@ package com.music.auth_service.dtos;
 import com.music.auth_service.models.Role;
 import com.music.auth_service.models.User;
 
+import java.util.Set;
 import java.util.UUID;
 
 public record UserResponse(
@@ -12,7 +13,8 @@ public record UserResponse(
         String cpf,
         String profilePhotoUrl,
         Role role,
-        AddressDTO address
+        AddressDTO address,
+        Set<String> favoriteProductIds
 ) {
     public static UserResponse from(User user) {
         AddressDTO addressDTO = null;
@@ -34,7 +36,8 @@ public record UserResponse(
                 user.getCpf(),
                 user.getProfilePhotoUrl(),
                 user.getRole(),
-                addressDTO
+                addressDTO,
+                user.getFavoriteProductIds()
         );
     }
 }

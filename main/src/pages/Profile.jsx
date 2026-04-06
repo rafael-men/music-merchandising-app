@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Package, MapPin, CreditCard, Bell, ChevronRight, LogOut, Pencil } from 'lucide-react'
+import { Package, MapPin, Bell, ChevronRight, LogOut, Pencil } from 'lucide-react'
 
 const Profile = () => {
   const [user] = useState({

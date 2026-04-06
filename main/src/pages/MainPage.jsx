@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import Hero from '../Components/Hero'
-import StockBadge from '../Components/StockBadge'
+import ProductCard from '../Components/ProductCard'
 
 const products = {
   deathMetal: [
@@ -31,42 +31,6 @@ const sectionConfig = {
   dailyDeals:     { title: 'Ofertas da Semana',        accent: 'text-white' },
 }
 
-const ProductCard = ({ product }) => (
-  <div className="snap-start shrink-0 w-44 sm:w-52 md:w-60 group">
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-gray-600 transition-all duration-300 hover:shadow-lg hover:shadow-black/40 hover:-translate-y-0.5 flex flex-col h-full">
-      <div className="overflow-hidden h-40 sm:h-44 md:h-52 shrink-0">
-        <img
-          src={product.imageUrl}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          alt={product.title}
-        />
-      </div>
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex flex-wrap gap-1 mb-2">
-          {product.categories.map((cat) => (
-            <button key={cat} className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-gray-200 transition-colors duration-150 cursor-pointer">
-              {cat}
-            </button>
-          ))}
-        </div>
-        <h5 className="text-sm font-semibold text-gray-100 leading-snug mb-2 line-clamp-2">{product.title}</h5>
-        <div className="mt-auto">
-          <p className="text-base font-bold text-green-400 mb-1">{product.price}</p>
-          <div className="mb-3">
-            <StockBadge stock={product.stock} />
-          </div>
-          <Link
-            to={`/produto/${product.id}`}
-            className="block text-center no-underline text-xs font-medium bg-white text-black py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-          >
-            Ver Detalhes
-          </Link>
-        </div>
-      </div>
-    </div>
-  </div>
-)
-
 const renderCarousel = (category) => {
   const { title, accent } = sectionConfig[category]
   return (
@@ -79,7 +43,9 @@ const renderCarousel = (category) => {
       </div>
       <div className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {products[category].map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <div key={product.id} className="snap-start shrink-0 w-64 sm:w-56 md:w-60 flex">
+            <ProductCard product={product} />
+          </div>
         ))}
       </div>
     </section>
@@ -88,12 +54,12 @@ const renderCarousel = (category) => {
 
 const MainPage = () => (
   <div className="min-h-screen bg-gray-950">
-    <div className="container mx-auto px-4 pt-6 md:pt-10 pb-16">
+    <Hero />
+    <div className="container mx-auto px-4 pt-8 pb-16">
       <div className="text-center mb-8 md:mb-10">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Bem-vindo à Music Store</h1>
         <p className="text-gray-400 text-sm sm:text-base">A melhor loja de artigos musicais</p>
       </div>
-      <Hero />
       {renderCarousel('deathMetal')}
       {renderCarousel('recentArrivals')}
       {renderCarousel('dailyDeals')}

@@ -115,8 +115,6 @@ const Cart = () => {
             </div>
 
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-
-              {/* Calcular frete */}
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
                 <Truck size={13} className="inline mr-1.5 mb-0.5" />
                 Calcular Frete
@@ -137,8 +135,6 @@ const Cart = () => {
                   Calcular
                 </button>
               </div>
-
-              {/* Resumo de valores */}
               <div className="space-y-2 mb-6 pb-4 border-b border-gray-800">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
@@ -155,8 +151,6 @@ const Cart = () => {
                   <span className="text-xl font-bold text-white">R$ {totalComFrete.toFixed(2)}</span>
                 </div>
               </div>
-
-              {/* Pagamento — apenas PIX */}
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Método de Pagamento</p>
               <div className="flex items-center gap-3 bg-gray-800 border border-green-500/30 rounded-xl px-4 py-3 mb-6">
                 <div className="text-green-400 shrink-0">
@@ -170,8 +164,6 @@ const Cart = () => {
                   <Check size={10} className="text-black" />
                 </div>
               </div>
-
-              {/* Chave PIX */}
               <div className="bg-gray-800 rounded-xl p-4 mb-6">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Chave PIX</p>
                 <div className="flex items-center gap-2">
