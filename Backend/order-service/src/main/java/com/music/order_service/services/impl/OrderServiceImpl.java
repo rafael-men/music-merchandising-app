@@ -27,6 +27,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponseDTO create(OrderRequestDTO dto) {
+        if (dto.paymentMethod() != com.music.order_service.models.PaymentMethod.PIX) {
+            throw new IllegalArgumentException("Apenas pagamento via PIX é aceito.");
+        }
         List<OrderItem> items = dto.items().stream()
                 .map(i -> new OrderItem(i.productId(), i.name(), i.image(), i.price(), i.quantity()))
                 .toList();

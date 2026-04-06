@@ -23,7 +23,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponseDTO create(ProductRequestDTO dto) {
         Product product = new Product(null, dto.title(), dto.description(), dto.price(),
-                dto.imageUrl(), dto.category(), Boolean.TRUE.equals(dto.available()));
+                dto.imageUrl(), dto.categories(), dto.maxInstallments(), dto.stockQuantity(), Boolean.TRUE.equals(dto.available()));
         return ProductResponseDTO.from(productRepository.save(product));
     }
 
@@ -40,7 +40,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponseDTO> findByCategory(ProductCategory category) {
-        return productRepository.findByCategory(category).stream().map(ProductResponseDTO::from).toList();
+        return productRepository.findByCategoriesContaining(category).stream().map(ProductResponseDTO::from).toList();
     }
 
     @Override
@@ -56,7 +56,9 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(dto.description());
         product.setPrice(dto.price());
         product.setImageUrl(dto.imageUrl());
-        product.setCategory(dto.category());
+        product.setCategories(dto.categories());
+        product.setMaxInstallments(dto.maxInstallments());
+        product.setStockQuantity(dto.stockQuantity());
         product.setAvailable(Boolean.TRUE.equals(dto.available()));
         return ProductResponseDTO.from(productRepository.save(product));
     }

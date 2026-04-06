@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends MongoRepository<Product, String> {
 
-    List<Product> findByCategory(ProductCategory category);
+    List<Product> findByCategoriesContaining(ProductCategory category);
     List<Product> findByAvailableTrue();
     List<Product> findByTitleContainingIgnoreCase(String title);
 }
