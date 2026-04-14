@@ -5,6 +5,9 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/cart_db}
 
+mongock:
+  migration-scan-package: com.music.cart_service.migration
+
 server:
   port: ${SERVER_PORT:8082}
   tomcat:

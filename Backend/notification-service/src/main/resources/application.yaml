@@ -6,6 +6,9 @@ spring:
       uri: ${MONGODB_URI:mongodb://localhost:27017/notification_db}
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+mongock:
+  migration-scan-package: com.music.notification_service.migration
+
 server:
   port: ${SERVER_PORT:8085}
   tomcat:

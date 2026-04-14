@@ -1,0 +1,95 @@
+package com.microsservices.api_gateway.filter;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.function.HandlerFilterFunction;
+import org.springframework.web.servlet.function.ServerRequest;
+import org.springframework.web.servlet.function.ServerResponse;
+
+import javax.crypto.SecretKey;
+import java.util.List;
+
+@Component
+public class JwtAuthGatewayFilter {
+
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/users/register",
+            "/users/login",
+            "/swagger-ui",
+            "/v3/api-docs"
+    );
+
+    private static final List<String> PUBLIC_GET_PATHS = List.of(
+            "/products"
+    );
+
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    public HandlerFilterFunction<ServerResponse, ServerResponse> filter() {
+        return (request, next) -> {
+            if (isPublicRoute(request)) {
+                return next.handle(request);
+            }
+
+            String authHeader = request.headers().firstHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"error\":\"Token não fornecido\"}");
+            }
+
+            try {
+                String token = authHeader.substring(7);
+                Claims claims = extractClaims(token);
+                String userId = claims.get("userId", String.class);
+                String role = claims.get("role", String.class);
+                String subject = claims.getSubject();
+
+                ServerRequest mutatedRequest = ServerRequest.from(request)
+                        .header("X-User-Id", userId != null ? userId : "")
+                        .header("X-User-Email", subject != null ? subject : "")
+                        .header("X-User-Role", role != null ? role : "USER")
+                        .build();
+
+                return next.handle(mutatedRequest);
+            } catch (Exception e) {
+                return ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"error\":\"Token inválido ou expirado\"}");
+            }
+        };
+    }
+
+    private boolean isPublicRoute(ServerRequest request) {
+        String path = request.uri().getPath();
+        String method = request.method().name();
+
+        for (String publicPath : PUBLIC_PATHS) {
+            if (path.startsWith(publicPath)) return true;
+        }
+
+        if ("GET".equalsIgnoreCase(method)) {
+            for (String publicGetPath : PUBLIC_GET_PATHS) {
+                if (path.startsWith(publicGetPath)) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Claims extractClaims(String token) {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+}

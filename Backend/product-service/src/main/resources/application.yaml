@@ -5,6 +5,9 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/product_db}
 
+mongock:
+  migration-scan-package: com.music.product_service.migration
+
 server:
   port: ${SERVER_PORT:8083}
   tomcat:

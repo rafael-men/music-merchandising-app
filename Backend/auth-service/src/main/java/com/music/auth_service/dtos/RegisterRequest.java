@@ -1,7 +1,9 @@
 package com.music.auth_service.dtos;
 
+import com.music.auth_service.models.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -24,6 +26,9 @@ public record RegisterRequest(
         String cpf,
 
         String profilePhotoUrl,
+
+        @NotNull(message = "Role is required")
+        Role role,
 
         AddressDTO address
 ) {}

@@ -7,6 +7,9 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
 
+mongock:
+  migration-scan-package: com.music.order_service.migration
+
 server:
   port: ${SERVER_PORT:8084}
   tomcat:

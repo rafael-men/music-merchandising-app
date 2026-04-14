@@ -8,12 +8,21 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    clean-disabled: false
+    locations: classpath:db/migration
+
+jwt:
+  secret: ${JWT_SECRET:c2VjdXJlLXNlY3JldC1rZXktZm9yLW11c2ljLW1lcmNoYW5kaXNpbmctYXBwLW11c3QtYmUtYXQtbGVhc3QtMjU2LWJpdHM=}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 server:
   port: ${SERVER_PORT:8081}

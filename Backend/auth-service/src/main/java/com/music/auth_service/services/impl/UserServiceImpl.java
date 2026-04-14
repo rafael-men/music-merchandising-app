@@ -11,6 +11,7 @@ import com.music.auth_service.models.Role;
 import com.music.auth_service.models.User;
 import com.music.auth_service.repositories.UserRepository;
 import com.music.auth_service.services.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,9 +23,11 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -36,10 +39,10 @@ public class UserServiceImpl implements UserService {
                 null,
                 request.name(),
                 request.email(),
-                request.password(),
+                passwordEncoder.encode(request.password()),
                 request.cpf(),
                 request.profilePhotoUrl(),
-                Role.USER,
+                request.role(),
                 buildAddress(request.address())
         );
 
@@ -76,7 +79,9 @@ public class UserServiceImpl implements UserService {
         applyCpfUpdate(request, user);
 
         Optional.ofNullable(request.name()).ifPresent(user::setName);
-        Optional.ofNullable(request.password()).ifPresent(user::setPassword);
+        Optional.ofNullable(request.password())
+                .map(passwordEncoder::encode)
+                .ifPresent(user::setPassword);
         Optional.ofNullable(request.profilePhotoUrl()).ifPresent(user::setProfilePhotoUrl);
         Optional.ofNullable(request.address()).map(this::buildAddress).ifPresent(user::setAddress);
 
