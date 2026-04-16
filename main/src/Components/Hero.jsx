@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
 import 'swiper/swiper-bundle.css'
+import ProductImage from './ProductImage'
 
 const novidades = [
   {
@@ -34,7 +35,39 @@ const Hero = () => {
   const navigate = useNavigate()
 
   return (
-    <section className="w-full overflow-hidden">
+    <section className="w-full overflow-hidden hero-swiper">
+      <style>{`
+        .hero-swiper .swiper-button-next,
+        .hero-swiper .swiper-button-prev {
+          color: rgba(255, 255, 255, 0.85);
+          top: 40%;
+          width: 44px;
+          height: 44px;
+          background: rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(4px);
+          border-radius: 9999px;
+          transition: background 0.2s ease;
+        }
+        .hero-swiper .swiper-button-prev { left: 16px; }
+        .hero-swiper .swiper-button-next { right: 16px; }
+        .hero-swiper .swiper-button-next::after,
+        .hero-swiper .swiper-button-prev::after {
+          font-size: 18px;
+          font-weight: 700;
+        }
+        .hero-swiper .swiper-button-next:hover,
+        .hero-swiper .swiper-button-prev:hover {
+          color: rgba(255, 255, 255, 1);
+          background: rgba(0, 0, 0, 0.55);
+        }
+        .hero-swiper .swiper-pagination-bullet {
+          background: rgba(255, 255, 255, 0.5);
+          opacity: 1;
+        }
+        .hero-swiper .swiper-pagination-bullet-active {
+          background: rgba(255, 255, 255, 1);
+        }
+      `}</style>
       <Swiper
         modules={[Autoplay, Navigation, Pagination]}
         autoplay={{ delay: 4000, disableOnInteraction: false }}
@@ -51,7 +84,7 @@ const Hero = () => {
               style={{ height: 'clamp(320px, 55vh, 600px)' }}
               onClick={() => navigate(`/novidade/${novidade.id}`)}
             >
-              <img
+              <ProductImage
                 src={novidade.imageUrl}
                 alt={novidade.title}
                 className="absolute inset-0 w-full h-full object-cover"

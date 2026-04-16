@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Card } from 'primereact/card'
+import ProductImage from './ProductImage'
 
 const ProductCard = ({ product }) => (
   <Card
     unstyled
     header={
       <div className="bg-black w-full overflow-hidden aspect-square">
-        <img
+        <ProductImage
           src={product.imageUrl}
           alt={product.title}
           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"

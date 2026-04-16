@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ShoppingCart, Trash2, ShoppingBag, Copy, Check, Truck, QrCode } from 'lucide-react'
+import ProductImage from '../Components/ProductImage'
 
 const PIX_KEY = 'pagamentos@musicstore.com.br'
 
@@ -98,7 +99,7 @@ const Cart = () => {
             <div className="space-y-3 mb-6">
               {cartItems.map(item => (
                 <div key={item.id} className="flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                  <ProductImage src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-100 truncate">{item.name}</p>
                     <p className="text-green-400 font-bold text-base mt-1">R$ {item.price.toFixed(2)}</p>

@@ -8,7 +8,7 @@ const Footer = () => {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-widest text-gray-400 mb-4">Links Rápidos</h3>
             <ul className="space-y-2">
-              {['Sobre', 'Contate-nos', 'Política de Privacidade', 'Termos de Serviço'].map((item) => (
+              {['Sobre', 'Contate-nos','Termos de Serviço'].map((item) => (
                 <li key={item}>
                   <button className="text-gray-500 hover:text-white text-sm transition-colors duration-200 bg-transparent border-0 p-0 cursor-pointer">{item}</button>
                 </li>

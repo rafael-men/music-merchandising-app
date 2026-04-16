@@ -11,6 +11,7 @@ import Footer from './Components/Footer';
 import Cart from './pages/Cart';
 import Profile from './pages/Profile';
 import Favorites from './pages/Favorites';
+import SearchResults from './pages/SearchResults';
 
 
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="/categoria/:slug" element={<CategoryPage/>}/>
           <Route path="/vistos-recentemente" element={<RecentlyViewed/>}/>
           <Route path="/favoritos" element={<Favorites/>}/>
+          <Route path="/busca" element={<SearchResults/>}/>
         </Routes>
         <Footer/>
       </div>

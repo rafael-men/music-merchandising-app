@@ -4,6 +4,7 @@ import { Typography } from '@material-tailwind/react'
 import { Truck, ShoppingCart, CreditCard, Heart } from 'lucide-react'
 import StockBadge from '../Components/StockBadge'
 import ProductCard from '../Components/ProductCard'
+import ProductImage from '../Components/ProductImage'
 import { allProducts } from '../data/catalog'
 import { useFavorites } from '../hooks/useFavorites'
 
@@ -170,7 +171,7 @@ const ProductDetails = () => {
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
           <div className="flex flex-col lg:flex-row">
             <div className="lg:order-1 lg:w-2/5 bg-black flex items-center justify-center shrink-0" style={{ minHeight: '400px' }}>
-              <img
+              <ProductImage
                 src={product.imageUrl}
                 alt={product.title}
                 className="w-full h-full object-contain max-h-[560px]"

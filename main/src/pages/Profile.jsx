@@ -19,19 +19,22 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-10 max-w-xl">
         <h2 className="text-2xl font-bold text-white mb-8">Meu Perfil</h2>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4 flex items-center gap-5">
+        <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4 flex items-center gap-5">
           <img
             src={user.profileImage}
             alt="Profile"
             className="w-20 h-20 rounded-full object-cover border-2 border-gray-700 shrink-0"
           />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-semibold text-white">{user.name}</h3>
-            <p className="text-gray-500 text-sm mt-0.5">{user.email}</p>
+          <div className="flex-1 min-w-0 pr-10 sm:pr-0">
+            <h3 className="text-xl font-semibold text-white truncate">{user.name}</h3>
+            <p className="text-gray-500 text-sm mt-0.5 truncate">{user.email}</p>
           </div>
-          <button className="flex items-center gap-1.5 text-xs font-medium text-gray-400 border border-gray-700 px-3 py-1.5 rounded-lg hover:border-gray-500 hover:text-white transition-all duration-200 shrink-0">
+          <button
+            aria-label="Editar perfil"
+            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-white transition-all duration-200 sm:static sm:flex sm:items-center sm:gap-1.5 sm:text-xs sm:font-medium sm:px-3 sm:py-1.5 sm:shrink-0"
+          >
             <Pencil size={12} />
-            Editar
+            <span className="hidden sm:inline">Editar</span>
           </button>
         </div>
 
