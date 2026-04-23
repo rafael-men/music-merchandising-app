@@ -15,7 +15,11 @@ public record OrderResponseDTO(
         double total,
         PaymentMethod paymentMethod,
         OrderStatus status,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String trackingCode,
+        String carrier,
+        String trackingUrl,
+        LocalDateTime shippedAt
 ) {
     public static OrderResponseDTO from(Order order) {
         return new OrderResponseDTO(
@@ -25,7 +29,11 @@ public record OrderResponseDTO(
                 order.getTotal(),
                 order.getPaymentMethod(),
                 order.getStatus(),
-                order.getCreatedAt()
+                order.getCreatedAt(),
+                order.getTrackingCode(),
+                order.getCarrier(),
+                order.getTrackingUrl(),
+                order.getShippedAt()
         );
     }
 }

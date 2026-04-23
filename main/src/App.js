@@ -12,9 +12,10 @@ import Cart from './pages/Cart';
 import Profile from './pages/Profile';
 import Favorites from './pages/Favorites';
 import SearchResults from './pages/SearchResults';
-
-
-
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import EditProfile from './pages/auth/EditProfile';
+import MyOrders from './pages/MyOrders';
 
 function App() {
   return (
@@ -32,6 +33,10 @@ function App() {
           <Route path="/vistos-recentemente" element={<RecentlyViewed/>}/>
           <Route path="/favoritos" element={<Favorites/>}/>
           <Route path="/busca" element={<SearchResults/>}/>
+          <Route path="/login" element={<Login/>}/>
+          <Route path="/register" element={<Register/>}/>
+          <Route path="/perfil/editar" element={<EditProfile/>}/>
+          <Route path="/perfil/pedidos" element={<MyOrders/>}/>
         </Routes>
         <Footer/>
       </div>

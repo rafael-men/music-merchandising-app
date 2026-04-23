@@ -2,6 +2,7 @@ package com.music.order_service.controllers;
 
 import com.music.order_service.dtos.OrderRequestDTO;
 import com.music.order_service.dtos.OrderResponseDTO;
+import com.music.order_service.dtos.TrackingUpdateDTO;
 import com.music.order_service.models.OrderStatus;
 import com.music.order_service.services.OrderService;
 import jakarta.validation.Valid;
@@ -36,5 +37,9 @@ public class OrderController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<OrderResponseDTO> updateStatus(@PathVariable String id, @RequestParam OrderStatus status) {
         return ResponseEntity.ok(orderService.updateStatus(id, status));
+    }
+    @PatchMapping("/{id}/tracking")
+    public ResponseEntity<OrderResponseDTO> updateTracking(@PathVariable String id, @RequestBody @Valid TrackingUpdateDTO dto) {
+        return ResponseEntity.ok(orderService.updateTracking(id, dto));
     }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Package, MapPin, Bell, ChevronRight, LogOut, Pencil } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Package, Bell, ChevronRight, LogOut, Pencil } from 'lucide-react'
 
 const Profile = () => {
   const [user] = useState({
@@ -9,8 +10,7 @@ const Profile = () => {
   })
 
   const menuItems = [
-    { label: 'Meus Pedidos',        Icon: Package },
-    { label: 'Endereços',           Icon: MapPin },
+    { label: 'Meus Pedidos',        Icon: Package, to: '/perfil/pedidos' },
     { label: 'Notificações',        Icon: Bell },
   ]
 
@@ -29,26 +29,32 @@ const Profile = () => {
             <h3 className="text-xl font-semibold text-white truncate">{user.name}</h3>
             <p className="text-gray-500 text-sm mt-0.5 truncate">{user.email}</p>
           </div>
-          <button
+          <Link
+            to="/perfil/editar"
             aria-label="Editar perfil"
-            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-white transition-all duration-200 sm:static sm:flex sm:items-center sm:gap-1.5 sm:text-xs sm:font-medium sm:px-3 sm:py-1.5 sm:shrink-0"
+            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 border border-gray-700 no-underline hover:border-gray-500 hover:text-white transition-all duration-200 sm:static sm:flex sm:items-center sm:gap-1.5 sm:text-xs sm:font-medium sm:px-3 sm:py-1.5 sm:shrink-0"
           >
             <Pencil size={12} />
             <span className="hidden sm:inline">Editar</span>
-          </button>
+          </Link>
         </div>
 
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-4">
-          {menuItems.map(({ label, Icon }, index) => (
-            <button
-              key={label}
-              className={`w-full flex items-center gap-4 px-6 py-4 text-left text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors duration-150 ${index < menuItems.length - 1 ? 'border-b border-gray-800' : ''}`}
-            >
-              <Icon size={16} className="text-gray-500 shrink-0" />
-              <span className="flex-1">{label}</span>
-              <ChevronRight size={14} className="text-gray-600" />
-            </button>
-          ))}
+          {menuItems.map(({ label, Icon, to }, index) => {
+            const className = `w-full flex items-center gap-4 px-6 py-4 text-left text-sm text-gray-300 no-underline hover:bg-gray-800 hover:text-white transition-colors duration-150 ${index < menuItems.length - 1 ? 'border-b border-gray-800' : ''}`
+            const content = (
+              <>
+                <Icon size={16} className="text-gray-500 shrink-0" />
+                <span className="flex-1">{label}</span>
+                <ChevronRight size={14} className="text-gray-600" />
+              </>
+            )
+            return to ? (
+              <Link key={label} to={to} className={className}>{content}</Link>
+            ) : (
+              <button key={label} className={className}>{content}</button>
+            )
+          })}
         </div>
 
         <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-red-500 border border-red-900/50 hover:bg-red-900/20 hover:border-red-700 transition-all duration-200">

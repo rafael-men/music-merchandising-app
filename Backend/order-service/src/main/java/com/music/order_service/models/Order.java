@@ -17,6 +17,10 @@ public class Order {
     private PaymentMethod paymentMethod;
     private OrderStatus status;
     private LocalDateTime createdAt;
+    private String trackingCode;
+    private String carrier;
+    private String trackingUrl;
+    private LocalDateTime shippedAt;
 
     public Order() {
         this.createdAt = LocalDateTime.now();
@@ -54,4 +58,16 @@ public class Order {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getTrackingCode() { return trackingCode; }
+    public void setTrackingCode(String trackingCode) { this.trackingCode = trackingCode; }
+
+    public String getCarrier() { return carrier; }
+    public void setCarrier(String carrier) { this.carrier = carrier; }
+
+    public String getTrackingUrl() { return trackingUrl; }
+    public void setTrackingUrl(String trackingUrl) { this.trackingUrl = trackingUrl; }
+
+    public LocalDateTime getShippedAt() { return shippedAt; }
+    public void setShippedAt(LocalDateTime shippedAt) { this.shippedAt = shippedAt; }
 }

@@ -2,6 +2,7 @@ package com.music.order_service.services.impl;
 
 import com.music.order_service.dtos.OrderRequestDTO;
 import com.music.order_service.dtos.OrderResponseDTO;
+import com.music.order_service.dtos.TrackingUpdateDTO;
 import com.music.order_service.exceptions.OrderNotFoundException;
 import com.music.order_service.kafka.OrderCreatedEvent;
 import com.music.order_service.kafka.OrderEventPublisher;
@@ -12,6 +13,7 @@ import com.music.order_service.repositories.OrderRepository;
 import com.music.order_service.services.OrderService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -63,6 +65,25 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException(id));
         order.setStatus(status);
+        if (status == OrderStatus.SHIPPED && order.getShippedAt() == null) {
+            order.setShippedAt(LocalDateTime.now());
+        }
+        return OrderResponseDTO.from(orderRepository.save(order));
+    }
+
+    @Override
+    public OrderResponseDTO updateTracking(String id, TrackingUpdateDTO dto) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException(id));
+        order.setTrackingCode(dto.trackingCode());
+        order.setCarrier(dto.carrier());
+        order.setTrackingUrl(dto.trackingUrl());
+        if (order.getShippedAt() == null) {
+            order.setShippedAt(LocalDateTime.now());
+        }
+        if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.CONFIRMED) {
+            order.setStatus(OrderStatus.SHIPPED);
+        }
         return OrderResponseDTO.from(orderRepository.save(order));
     }
 }
