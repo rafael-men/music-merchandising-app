@@ -4,9 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.function.HandlerFilterFunction;
@@ -33,10 +31,16 @@ public class JwtAuthGatewayFilter {
     @Value("${jwt.secret}")
     private String secretKey;
 
+    @Value("${internal.secret}")
+    private String internalSecret;
+
     public HandlerFilterFunction<ServerResponse, ServerResponse> filter() {
         return (request, next) -> {
             if (isPublicRoute(request)) {
-                return next.handle(request);
+                ServerRequest mutated = ServerRequest.from(request)
+                        .header("X-Internal-Secret", internalSecret)
+                        .build();
+                return next.handle(mutated);
             }
 
             String authHeader = request.headers().firstHeader("Authorization");
@@ -56,6 +60,7 @@ public class JwtAuthGatewayFilter {
                         .header("X-User-Id", userId != null ? userId : "")
                         .header("X-User-Email", subject != null ? subject : "")
                         .header("X-User-Role", role != null ? role : "USER")
+                        .header("X-Internal-Secret", internalSecret)
                         .build();
 
                 return next.handle(mutatedRequest);

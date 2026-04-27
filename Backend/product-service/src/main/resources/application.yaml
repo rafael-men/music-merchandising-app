@@ -8,6 +8,9 @@ spring:
 mongock:
   migration-scan-package: com.music.product_service.migration
 
+internal:
+  secret: ${INTERNAL_SECRET:dev-internal-secret-change-me}
+
 server:
   port: ${SERVER_PORT:8083}
   tomcat:

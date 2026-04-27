@@ -130,7 +130,9 @@ const CopyButton = ({ text, label = 'Copiar' }) => {
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      console.error(e)
+    }
   }
   return (
     <button
