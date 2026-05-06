@@ -1,6 +1,14 @@
 import { Link } from 'react-router-dom'
 import { Card } from 'primereact/card'
 import ProductImage from './ProductImage'
+import { formatCategory } from '../utils/categories'
+
+const formatPrice = (value) => {
+  if (typeof value === 'number') {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  }
+  return value
+}
 
 const ProductCard = ({ product }) => (
   <Card
@@ -32,12 +40,12 @@ const ProductCard = ({ product }) => (
     <div className="flex flex-wrap gap-1 mb-2">
       {product.categories.map((cat) => (
         <span key={cat} className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700 hover:border-gray-500 hover:text-gray-200 transition-colors duration-150 cursor-pointer">
-          {cat}
+          {formatCategory(cat)}
         </span>
       ))}
     </div>
     <p className="text-sm font-semibold text-gray-100 leading-snug mb-2 line-clamp-2">{product.title}</p>
-    <p className="text-base font-bold text-green-400 mt-auto">{product.price}</p>
+    <p className="text-base font-bold text-green-400 mt-auto">{formatPrice(product.price)}</p>
   </Card>
 )
 

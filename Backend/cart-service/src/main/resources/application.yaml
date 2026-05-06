@@ -3,19 +3,22 @@ spring:
     name: cart-service
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/cart_db}
+      uri: mongodb://mongodb:27017/cart_db
 
 mongock:
   migration-scan-package: com.music.cart_service.migration
+  mongo-db:
+    connection-string: mongodb://mongodb:27017
+    database-name: cart_db
 
 server:
-  port: ${SERVER_PORT:8082}
+  port: 8082
   tomcat:
     max-http-header-size: 1048576
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+      defaultZone: http://eureka-server:8761/eureka
   instance:
     prefer-ip-address: true

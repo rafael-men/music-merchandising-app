@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
                 passwordEncoder.encode(request.password()),
                 request.cpf(),
                 request.profilePhotoUrl(),
-                request.role(),
+                Role.USER,
                 buildAddress(request.address())
         );
 

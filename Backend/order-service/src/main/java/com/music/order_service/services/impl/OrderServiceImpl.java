@@ -56,6 +56,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<OrderResponseDTO> findAll() {
+        return orderRepository.findAll().stream().map(OrderResponseDTO::from).toList();
+    }
+
+    @Override
     public List<OrderResponseDTO> findByUserId(String userId) {
         return orderRepository.findByUserId(userId).stream().map(OrderResponseDTO::from).toList();
     }

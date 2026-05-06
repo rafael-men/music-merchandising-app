@@ -26,6 +26,10 @@ public class OrderController {
     public ResponseEntity<OrderResponseDTO> create(@RequestBody @Valid OrderRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(dto));
     }
+    @GetMapping
+    public ResponseEntity<List<OrderResponseDTO>> findAll() {
+        return ResponseEntity.ok(orderService.findAll());
+    }
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponseDTO> findById(@PathVariable String id) {
         return ResponseEntity.ok(orderService.findById(id));

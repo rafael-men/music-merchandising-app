@@ -1,10 +1,33 @@
 import { useState } from 'react'
-import { ShoppingCart, Trash2, ShoppingBag, Copy, Check, Truck, QrCode } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShoppingCart, Trash2, ShoppingBag, Copy, Check, Truck, QrCode, LogIn } from 'lucide-react'
 import ProductImage from '../Components/ProductImage'
+import { useAuth } from '../contexts/AuthContext'
 
 const PIX_KEY = 'pagamentos@musicstore.com.br'
 
-const Cart = () => {
+const LoginRequired = () => (
+  <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
+    <div className="w-full max-w-md text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
+      <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
+        <ShoppingCart size={22} className="text-white" />
+      </div>
+      <h2 className="text-lg font-semibold mb-1">Faça login para acessar o carrinho</h2>
+      <p className="text-sm text-gray-400 mb-6">Você precisa estar logado para ver e gerenciar seus produtos.</p>
+      <div className="flex flex-col gap-2">
+        <Link to="/login" className="inline-flex items-center justify-center gap-2 text-sm font-medium text-black bg-white py-2.5 rounded-lg no-underline hover:bg-gray-200 transition-colors">
+          <LogIn size={14} />
+          Entrar
+        </Link>
+        <Link to="/register" className="inline-flex items-center justify-center text-sm font-medium text-gray-300 border border-gray-700 py-2.5 rounded-lg no-underline hover:border-gray-500 hover:text-white transition-colors">
+          Criar conta
+        </Link>
+      </div>
+    </div>
+  </div>
+)
+
+const CartContent = () => {
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
@@ -191,6 +214,11 @@ const Cart = () => {
       </div>
     </div>
   )
+}
+
+const Cart = () => {
+  const { isAuthenticated } = useAuth()
+  return isAuthenticated ? <CartContent /> : <LoginRequired />
 }
 
 export default Cart

@@ -3,19 +3,24 @@ spring:
     name: notification-service
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/notification_db}
+      uri: mongodb://mongodb:27017/notification_db
   kafka:
-    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    bootstrap-servers: kafka:29092
+
 mongock:
   migration-scan-package: com.music.notification_service.migration
+  mongo-db:
+    connection-string: mongodb://mongodb:27017
+    database-name: notification_db
 
 server:
-  port: ${SERVER_PORT:8085}
+  port: 8085
   tomcat:
     max-http-header-size: 1048576
+
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+      defaultZone: http://eureka-server:8761/eureka
   instance:
     prefer-ip-address: true

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { InputText } from 'primereact/inputtext'
@@ -6,29 +6,50 @@ import { Button } from 'primereact/button'
 import { Package, Search, Plus, Pencil, Trash2 } from 'lucide-react'
 import ProductImage from '../../Components/ProductImage'
 import { adminTablePt, adminColumnPt, adminPaginatorProps } from '../components/tableStyles'
-
-const mockProducts = [
-  { id: 'p1', title: 'Rotting Christ - Pro Xristou (CD)',         price: 89.90,  stock: 25, categories: ['BLACK_METAL', 'CD'],          available: true,  imageUrl: null },
-  { id: 'p2', title: 'Iron Maiden - The Number of the Beast (Vinyl)', price: 299.90, stock: 16, categories: ['HEAVY_METAL', 'VINYL'],   available: true,  imageUrl: null },
-  { id: 'p3', title: 'Deftones - Ohms (Vinyl)',                   price: 259.90, stock: 15, categories: ['NU_METAL', 'VINYL'],          available: true,  imageUrl: null },
-  { id: 'p4', title: 'Lady Gaga - Mayhem (CD)',                   price: 69.90,  stock: 50, categories: ['POP', 'CD'],                  available: true,  imageUrl: null },
-  { id: 'p5', title: 'Camiseta Oficial Iron Maiden - The Trooper', price: 89.90, stock: 60, categories: ['OFFICIAL_MERCHANDISE'],        available: true,  imageUrl: null },
-  { id: 'p6', title: 'Dream Theater - Metropolis Pt. 2 (CD)',     price: 84.90,  stock: 0,  categories: ['PROG_METAL', 'CD'],           available: false, imageUrl: null },
-]
+import { productsApi } from '../../api/products'
+import { extractErrorMessage } from '../../api/client'
+import { formatCategory } from '../../utils/categories'
 
 const formatBRL = (value) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const tablePt = adminTablePt
 const columnPt = adminColumnPt
 
 const AdminProducts = () => {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
 
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    productsApi
+      .list()
+      .then((data) => {
+        if (!cancelled) setProducts(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => {
+        if (!cancelled) setError(extractErrorMessage(err, 'Falha ao carregar produtos.'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
+
   const filtered = useMemo(() => {
-    if (!search) return mockProducts
-    return mockProducts.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()))
-  }, [search])
+    if (!search) return products
+    return products.filter((p) => (p.title || '').toLowerCase().includes(search.toLowerCase()))
+  }, [search, products])
+
+  const normalized = filtered.map((p) => ({
+    ...p,
+    available: p.available ?? (p.stockQuantity > 0),
+    stock: p.stock ?? p.stockQuantity ?? 0,
+    categories: p.categories || [],
+  }))
 
   const productTemplate = (row) => (
     <div className="flex items-center gap-3 min-w-0">
@@ -45,7 +66,7 @@ const AdminProducts = () => {
     <div className="flex flex-wrap gap-1">
       {row.categories.slice(0, 2).map((cat) => (
         <span key={cat} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
-          {cat}
+          {formatCategory(cat)}
         </span>
       ))}
       {row.categories.length > 2 && (
@@ -123,13 +144,20 @@ const AdminProducts = () => {
         />
       </div>
 
+      {error && (
+        <div className="bg-red-900/20 border border-red-900/40 rounded-lg px-4 py-3 mb-4 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
       <DataTable
-        value={filtered}
+        value={normalized}
         pt={tablePt}
         rowHover
         stripedRows
+        loading={loading}
         {...adminPaginatorProps}
-        emptyMessage="Nenhum produto encontrado."
+        emptyMessage={loading ? 'Carregando...' : 'Nenhum produto encontrado.'}
       >
         <Column header="Produto"    body={productTemplate}    pt={columnPt} />
         <Column header="Categorias" body={categoriesTemplate} pt={columnPt} />

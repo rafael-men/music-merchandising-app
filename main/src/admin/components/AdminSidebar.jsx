@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Package, Users, ShoppingBag, LogOut, Music2, X } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Visão geral', Icon: LayoutDashboard, end: true },
@@ -10,8 +11,10 @@ const NAV_ITEMS = [
 
 const AdminSidebar = ({ open, onClose }) => {
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   const handleLogout = () => {
+    logout()
     navigate('/admin/login')
   }
 

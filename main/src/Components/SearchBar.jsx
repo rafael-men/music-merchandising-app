@@ -3,14 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 
 const CATEGORIES = [
-  'Black Metal',
-  'Death Metal',
-  'PoP',
-  'Brasileira',
-  'Produtos Licenciados',
-  'Vinil',
-  'CDs Importados e Nacionais',
-  'Nu Metal',
+  { label: 'Black Metal',          value: 'BLACK_METAL' },
+  { label: 'Death Metal',          value: 'DEATH_METAL' },
+  { label: 'Heavy Metal',          value: 'HEAVY_METAL' },
+  { label: 'Nu Metal',             value: 'NU_METAL' },
+  { label: 'Hard Rock',            value: 'HARD_ROCK' },
+  { label: 'Rock',                 value: 'ROCK' },
+  { label: 'Prog Metal',           value: 'PROG_METAL' },
+  { label: 'Sludge Metal',         value: 'SLUDGE_METAL' },
+  { label: 'Pop',                  value: 'POP' },
+  { label: 'Folk',                 value: 'FOLK' },
+  { label: 'Eletrônica',           value: 'ELECTRONIC' },
+  { label: 'Música Brasileira',    value: 'BRAZILLIAN_MUSIC' },
+  { label: 'Internacional',        value: 'INTERNATIONAL' },
+  { label: 'Underground',          value: 'UNDERGROUND' },
+  { label: 'CD',                   value: 'CD' },
+  { label: 'Vinil',                value: 'VINYL' },
+  { label: 'Merchandise Oficial',  value: 'OFFICIAL_MERCHANDISE' },
 ]
 
 const SearchBar = ({ onSubmit }) => {
@@ -105,7 +114,7 @@ const SearchBar = ({ onSubmit }) => {
           >
             <option value="">Todas</option>
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
 

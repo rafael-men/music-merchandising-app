@@ -1,14 +1,37 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Clock, ArrowLeft } from 'lucide-react'
-import { allProducts } from '../data/catalog'
 import ProductCard from '../Components/ProductCard'
-
+import { productsApi } from '../api/products'
 
 const RecentlyViewed = () => {
-  const viewedIds = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
-  const products = viewedIds
-    .map((id) => allProducts.find((p) => p.id === id))
-    .filter(Boolean)
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    const viewedIds = JSON.parse(localStorage.getItem('recentlyViewed') || '[]')
+
+    if (viewedIds.length === 0) {
+      setLoading(false)
+      return
+    }
+
+    Promise.all(
+      viewedIds.map((id) => productsApi.get(id).catch(() => null))
+    )
+      .then((items) => {
+        if (cancelled) return
+        const valid = items.filter(Boolean)
+        setProducts(valid)
+        if (valid.length !== viewedIds.length) {
+          localStorage.setItem('recentlyViewed', JSON.stringify(valid.map((p) => p.id)))
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -22,7 +45,11 @@ const RecentlyViewed = () => {
           <p className="text-gray-400 text-sm mt-1">Produtos que você visitou anteriormente.</p>
         </div>
 
-        {products.length === 0 ? (
+        {loading && (
+          <div className="text-center py-24 text-gray-500 text-sm">Carregando histórico...</div>
+        )}
+
+        {!loading && products.length === 0 && (
           <div className="text-center py-24 text-gray-600">
             <Clock size={48} className="mx-auto mb-4 opacity-20" />
             <p className="text-lg mb-2">Nenhum produto visitado ainda.</p>
@@ -35,7 +62,9 @@ const RecentlyViewed = () => {
               Ir para a loja
             </Link>
           </div>
-        ) : (
+        )}
+
+        {!loading && products.length > 0 && (
           <>
             <p className="text-xs text-gray-500 mb-6">{products.length} {products.length === 1 ? 'produto' : 'produtos'} visitados</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

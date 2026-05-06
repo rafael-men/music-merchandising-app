@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { InputText } from 'primereact/inputtext'
@@ -8,6 +8,9 @@ import { Dialog } from 'primereact/dialog'
 import { Toast } from 'primereact/toast'
 import { ShoppingBag, Search, Clock, CheckCircle2, Truck, XCircle, Pencil } from 'lucide-react'
 import { adminTablePt, adminColumnPt, adminPaginatorProps } from '../components/tableStyles'
+import { ordersApi } from '../../api/orders'
+import { usersApi } from '../../api/users'
+import { extractErrorMessage } from '../../api/client'
 
 const STATUS_OPTIONS = [
   { label: 'Pendente',   value: 'PENDING' },
@@ -25,17 +28,8 @@ const STATUS_META = {
   CANCELLED: { label: 'Cancelado',  Icon: XCircle,      color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/30' },
 }
 
-const initialOrders = [
-  { id: 'ord-2026-001', customer: 'Ana Beatriz',   email: 'ana@example.com',     total: 389.80, items: 2, status: 'DELIVERED', createdAt: '2026-04-02T14:32:00', trackingCode: 'BR123456789MS', carrier: 'Correios' },
-  { id: 'ord-2026-002', customer: 'João Pereira',  email: 'joao@example.com',    total: 259.90, items: 1, status: 'SHIPPED',   createdAt: '2026-04-18T09:15:00', trackingCode: 'BR987654321MS', carrier: 'Correios' },
-  { id: 'ord-2026-003', customer: 'Rafael Silva',  email: 'rafael@example.com',  total: 229.70, items: 3, status: 'CONFIRMED', createdAt: '2026-04-20T18:47:00', trackingCode: '',              carrier: 'Correios' },
-  { id: 'ord-2026-004', customer: 'Mariana Costa', email: 'mariana@example.com', total: 84.90,  items: 1, status: 'PENDING',   createdAt: '2026-04-22T08:12:00', trackingCode: '',              carrier: '' },
-  { id: 'ord-2026-005', customer: 'Carlos Souza',  email: 'carlos@example.com',  total: 519.80, items: 2, status: 'PENDING',   createdAt: '2026-04-23T10:05:00', trackingCode: '',              carrier: '' },
-  { id: 'ord-2026-006', customer: 'Beatriz Lima',  email: 'beatriz@example.com', total: 174.80, items: 2, status: 'CANCELLED', createdAt: '2026-04-15T16:33:00', trackingCode: '',              carrier: '' },
-]
-
 const formatBRL = (value) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -57,24 +51,64 @@ const inputClass = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py
 const labelClass = 'block text-xs font-medium text-gray-400 mb-1.5'
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState([])
+  const [usersById, setUsersById] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState(null)
   const [editing, setEditing] = useState(null)
   const [editForm, setEditForm] = useState(null)
+  const [saving, setSaving] = useState(false)
   const toast = useRef(null)
 
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    Promise.all([
+      ordersApi.list().catch(() => []),
+      usersApi.list().catch(() => []),
+    ])
+      .then(([ordersData, usersData]) => {
+        if (cancelled) return
+        const userMap = {}
+        for (const u of usersData || []) userMap[u.id] = u
+        setUsersById(userMap)
+        setOrders(Array.isArray(ordersData) ? ordersData : [])
+      })
+      .catch((err) => {
+        if (!cancelled) setError(extractErrorMessage(err, 'Falha ao carregar pedidos.'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const enriched = useMemo(
+    () => orders.map((o) => {
+      const user = usersById[o.userId]
+      return {
+        ...o,
+        customer: user?.name || '—',
+        email: user?.email || o.userId,
+        itemsCount: (o.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0),
+      }
+    }),
+    [orders, usersById]
+  )
+
   const filtered = useMemo(() => {
-    return orders.filter((o) => {
+    return enriched.filter((o) => {
       const q = search.toLowerCase()
       const matchSearch = !q ||
-        o.id.toLowerCase().includes(q) ||
+        (o.id || '').toLowerCase().includes(q) ||
         o.customer.toLowerCase().includes(q) ||
         o.email.toLowerCase().includes(q)
       const matchStatus = !statusFilter || o.status === statusFilter
       return matchSearch && matchStatus
     })
-  }, [orders, search, statusFilter])
+  }, [enriched, search, statusFilter])
 
   const openEdit = (row) => {
     setEditing(row)
@@ -90,18 +124,40 @@ const AdminOrders = () => {
     setEditForm(null)
   }
 
-  const handleSave = () => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === editing.id ? { ...o, ...editForm } : o))
-    )
-    toast.current?.show({
-      severity: 'success',
-      summary: 'Pedido atualizado',
-      detail: `#${editing.id} salvo com sucesso.`,
-      life: 2500,
-    })
-    closeEdit()
-    // TODO: integrar com PATCH /orders/{id}/status e PATCH /orders/{id}/tracking
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      let updated = null
+      if (editForm.status && editForm.status !== editing.status) {
+        updated = await ordersApi.updateStatus(editing.id, editForm.status)
+      }
+      if (editForm.trackingCode && editForm.carrier) {
+        updated = await ordersApi.updateTracking(editing.id, {
+          trackingCode: editForm.trackingCode,
+          carrier: editForm.carrier,
+          trackingUrl: editForm.trackingUrl || null,
+        })
+      }
+      if (updated) {
+        setOrders((prev) => prev.map((o) => (o.id === editing.id ? updated : o)))
+      }
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Pedido atualizado',
+        detail: `#${editing.id} salvo com sucesso.`,
+        life: 2500,
+      })
+      closeEdit()
+    } catch (err) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao salvar',
+        detail: extractErrorMessage(err, 'Falha ao atualizar pedido.'),
+        life: 3500,
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
   const idTemplate = (row) => (
@@ -184,17 +240,24 @@ const AdminOrders = () => {
         />
       </div>
 
+      {error && (
+        <div className="bg-red-900/20 border border-red-900/40 rounded-lg px-4 py-3 mb-4 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
       <DataTable
         value={filtered}
         pt={tablePt}
         rowHover
         stripedRows
+        loading={loading}
         {...adminPaginatorProps}
-        emptyMessage="Nenhum pedido encontrado."
+        emptyMessage={loading ? 'Carregando...' : 'Nenhum pedido encontrado.'}
       >
         <Column header="Pedido"   body={idTemplate}       pt={columnPt} />
         <Column header="Cliente"  body={customerTemplate} pt={columnPt} />
-        <Column header="Itens"    field="items"           pt={columnPt} />
+        <Column header="Itens"    field="itemsCount"      pt={columnPt} />
         <Column header="Total"    body={totalTemplate}    pt={columnPt} />
         <Column header="Rastreio" body={trackingTemplate} pt={columnPt} />
         <Column header="Status"   body={statusTemplate}   pt={columnPt} />
@@ -285,8 +348,9 @@ const AdminOrders = () => {
               <Button
                 type="button"
                 onClick={handleSave}
-                label="Salvar alterações"
-                className="flex-1 text-sm font-medium text-black bg-white py-2 rounded-lg hover:bg-gray-200 transition-colors border-0"
+                disabled={saving}
+                label={saving ? 'Salvando...' : 'Salvar alterações'}
+                className="flex-1 text-sm font-medium text-black bg-white py-2 rounded-lg hover:bg-gray-200 transition-colors border-0 disabled:opacity-60"
               />
             </div>
           </div>

@@ -3,22 +3,25 @@ spring:
     name: product-service
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/product_db}
+      uri: mongodb://mongodb:27017/product_db
 
 mongock:
   migration-scan-package: com.music.product_service.migration
+  mongo-db:
+    connection-string: mongodb://mongodb:27017
+    database-name: product_db
 
 internal:
-  secret: ${INTERNAL_SECRET:dev-internal-secret-change-me}
+  secret: dev-internal-secret-change-me
 
 server:
-  port: ${SERVER_PORT:8083}
+  port: 8083
   tomcat:
     max-http-header-size: 1048576
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+      defaultZone: http://eureka-server:8761/eureka
   instance:
     prefer-ip-address: true

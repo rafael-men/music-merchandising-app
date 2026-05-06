@@ -10,6 +10,7 @@ import java.util.List;
 public interface OrderService {
     OrderResponseDTO create(OrderRequestDTO dto);
     OrderResponseDTO findById(String id);
+    List<OrderResponseDTO> findAll();
     List<OrderResponseDTO> findByUserId(String userId);
     OrderResponseDTO updateStatus(String id, OrderStatus status);
     OrderResponseDTO updateTracking(String id, TrackingUpdateDTO dto);

@@ -7,9 +7,36 @@ import { Message } from 'primereact/message'
 import { Divider } from 'primereact/divider'
 import { Dropdown } from 'primereact/dropdown'
 import { ArrowLeft, Mail, Lock, User, IdCard, MapPin, Upload, Trash2, Camera } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { authApi } from '../../api/auth'
+import { extractErrorMessage } from '../../api/client'
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const PHOTO_MAX_DIMENSION = 256
+
+const fileToCompressedDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('Imagem inválida.'))
+      img.onload = () => {
+        const scale = Math.min(1, PHOTO_MAX_DIMENSION / Math.max(img.width, img.height))
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  })
 
 const UF_OPTIONS = [
   { label: 'AC', value: 'AC' }, { label: 'AL', value: 'AL' }, { label: 'AP', value: 'AP' },
@@ -66,11 +93,13 @@ const validatePassword = (value) => {
   return ''
 }
 
-const currentUser = {
-  name: 'Rafael',
-  email: 'rafael@example.com',
+const DEFAULT_PHOTO = 'https://i.pinimg.com/736x/c0/74/9b/c0749b7cc401421662ae901ec8f9f660.jpg'
+
+const emptyForm = {
+  name: '',
+  email: '',
   cpf: '',
-  profilePhotoUrl: 'https://i.pinimg.com/736x/c0/74/9b/c0749b7cc401421662ae901ec8f9f660.jpg',
+  profilePhotoUrl: '',
   street: '',
   number: '',
   complement: '',
@@ -78,18 +107,18 @@ const currentUser = {
   city: '',
   state: '',
   zipCode: '',
+  password: '',
+  confirmPassword: '',
 }
 
 const EditProfile = () => {
   const navigate = useNavigate()
+  const { user: authUser, isAuthenticated } = useAuth()
   const fileInputRef = useRef(null)
-  const [form, setForm] = useState({
-    ...currentUser,
-    password: '',
-    confirmPassword: '',
-  })
+  const [form, setForm] = useState(emptyForm)
+  const [loadingUser, setLoadingUser] = useState(true)
   const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(currentUser.profilePhotoUrl)
+  const [photoPreview, setPhotoPreview] = useState(DEFAULT_PHOTO)
   const [photoError, setPhotoError] = useState('')
   const [touched, setTouched] = useState({})
   const [loading, setLoading] = useState(false)
@@ -97,13 +126,39 @@ const EditProfile = () => {
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    if (!photoFile) return
-    const url = URL.createObjectURL(photoFile)
-    setPhotoPreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [photoFile])
+    if (!isAuthenticated || !authUser?.id) return
+    let cancelled = false
+    setLoadingUser(true)
+    authApi
+      .getById(authUser.id)
+      .then((data) => {
+        if (cancelled) return
+        const addr = data.address || {}
+        setForm({
+          name: data.name || '',
+          email: data.email || '',
+          cpf: data.cpf || '',
+          profilePhotoUrl: data.profilePhotoUrl || '',
+          street: addr.street || '',
+          number: addr.number || '',
+          complement: addr.complement || '',
+          neighborhood: addr.neighborhood || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          zipCode: addr.zipCode || '',
+          password: '',
+          confirmPassword: '',
+        })
+        if (data.profilePhotoUrl) setPhotoPreview(data.profilePhotoUrl)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(extractErrorMessage(err, 'Falha ao carregar dados do perfil.'))
+      })
+      .finally(() => { if (!cancelled) setLoadingUser(false) })
+    return () => { cancelled = true }
+  }, [isAuthenticated, authUser?.id])
 
-  const handlePhotoSelect = (e) => {
+  const handlePhotoSelect = async (e) => {
     setPhotoError('')
     const file = e.target.files?.[0]
     if (!file) return
@@ -116,11 +171,19 @@ const EditProfile = () => {
       return
     }
     setPhotoFile(file)
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file)
+      setPhotoPreview(dataUrl)
+      setForm((prev) => ({ ...prev, profilePhotoUrl: dataUrl }))
+    } catch (err) {
+      setPhotoError('Não foi possível processar a imagem.')
+    }
   }
 
   const handlePhotoRemove = () => {
     setPhotoFile(null)
-    setPhotoPreview(currentUser.profilePhotoUrl)
+    setPhotoPreview(DEFAULT_PHOTO)
+    setForm((prev) => ({ ...prev, profilePhotoUrl: '' }))
     setPhotoError('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -170,10 +233,28 @@ const EditProfile = () => {
 
     setLoading(true)
     try {
-     await new Promise((r) => setTimeout(r, 800))
+      const hasAddress = form.zipCode || form.street || form.city || form.state
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        cpf: form.cpf || null,
+        profilePhotoUrl: form.profilePhotoUrl || null,
+        address: hasAddress ? {
+          street: form.street || null,
+          number: form.number || null,
+          complement: form.complement || null,
+          neighborhood: form.neighborhood || null,
+          city: form.city || null,
+          state: form.state || null,
+          zipCode: form.zipCode || null,
+        } : null,
+      }
+      if (form.password) payload.password = form.password
+      await authApi.update(authUser.id, payload)
       setSuccess('Dados atualizados com sucesso.')
+      setForm((prev) => ({ ...prev, password: '', confirmPassword: '' }))
     } catch (err) {
-      setError('Não foi possível salvar as alterações.')
+      setError(extractErrorMessage(err, 'Não foi possível salvar as alterações.'))
     } finally {
       setLoading(false)
     }
@@ -229,7 +310,7 @@ const EditProfile = () => {
               <img
                 src={photoPreview}
                 alt="Profile preview"
-                onError={(e) => { e.currentTarget.src = currentUser.profilePhotoUrl }}
+                onError={(e) => { e.currentTarget.src = DEFAULT_PHOTO }}
                 className="w-full h-full object-cover"
               />
               <span className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -491,8 +572,8 @@ const EditProfile = () => {
               />
               <Button
                 type="submit"
-                loading={loading}
-                className="w-full sm:w-auto sm:flex-1 bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0"
+                disabled={loading}
+                className="w-full sm:w-auto sm:flex-1 bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0 disabled:opacity-60"
                 label={loading ? 'Salvando...' : 'Salvar alterações'}
               />
             </div>

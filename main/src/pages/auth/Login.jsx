@@ -5,12 +5,15 @@ import { Password } from 'primereact/password'
 import { Button } from 'primereact/button'
 import { Message } from 'primereact/message'
 import { Music2, Mail, Lock } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { extractErrorMessage } from '../../api/client'
 
 const isValidEmail = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value).trim())
 
 const Login = () => {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
   const [touched, setTouched] = useState({})
   const [loading, setLoading] = useState(false)
@@ -43,10 +46,10 @@ const Login = () => {
 
     setLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 600))
+      await login(form.email.trim(), form.password)
       navigate('/')
     } catch (err) {
-      setError('E-mail ou senha inválidos.')
+      setError(extractErrorMessage(err, 'E-mail ou senha inválidos.'))
     } finally {
       setLoading(false)
     }
@@ -131,8 +134,8 @@ const Login = () => {
 
             <Button
               type="submit"
-              loading={loading}
-              className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0"
+              disabled={loading}
+              className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0 disabled:opacity-60"
               label={loading ? 'Entrando...' : 'Entrar'}
             />
           </form>

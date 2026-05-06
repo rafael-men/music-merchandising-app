@@ -5,12 +5,15 @@ import { Password } from 'primereact/password'
 import { Button } from 'primereact/button'
 import { Message } from 'primereact/message'
 import { ShieldCheck, Mail, Lock } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { extractErrorMessage } from '../../api/client'
 
 const isValidEmail = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value).trim())
 
 const AdminLogin = () => {
   const navigate = useNavigate()
+  const { login, logout } = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
   const [touched, setTouched] = useState({})
   const [loading, setLoading] = useState(false)
@@ -42,10 +45,15 @@ const AdminLogin = () => {
 
     setLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 600))
+      const user = await login(form.email.trim(), form.password)
+      if (user?.role !== 'ADMIN') {
+        logout()
+        setError('Esta conta não tem permissão de administrador.')
+        return
+      }
       navigate('/admin')
     } catch (err) {
-      setError('Credenciais inválidas ou usuário não é admin.')
+      setError(extractErrorMessage(err, 'Credenciais inválidas.'))
     } finally {
       setLoading(false)
     }
@@ -120,8 +128,8 @@ const AdminLogin = () => {
 
             <Button
               type="submit"
-              loading={loading}
-              className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0 mt-2"
+              disabled={loading}
+              className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0 mt-2 disabled:opacity-60"
               label={loading ? 'Entrando...' : 'Entrar no painel'}
             />
           </form>

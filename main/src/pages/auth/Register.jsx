@@ -7,6 +7,8 @@ import { Message } from 'primereact/message'
 import { Divider } from 'primereact/divider'
 import { Dropdown } from 'primereact/dropdown'
 import { Music2, Mail, Lock, User, IdCard, MapPin } from 'lucide-react'
+import { authApi } from '../../api/auth'
+import { extractErrorMessage } from '../../api/client'
 
 const UF_OPTIONS = [
   { label: 'AC', value: 'AC' }, { label: 'AL', value: 'AL' }, { label: 'AP', value: 'AP' },
@@ -123,10 +125,26 @@ const Register = () => {
 
     setLoading(true)
     try {
-      await new Promise((r) => setTimeout(r, 800))
+      const hasAddress = form.zipCode || form.street || form.city || form.state
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        cpf: form.cpf || null,
+        address: hasAddress ? {
+          street: form.street || null,
+          number: form.number || null,
+          complement: form.complement || null,
+          neighborhood: form.neighborhood || null,
+          city: form.city || null,
+          state: form.state || null,
+          zipCode: form.zipCode || null,
+        } : null,
+      }
+      await authApi.register(payload)
       navigate('/login')
     } catch (err) {
-      setError('Não foi possível concluir o cadastro.')
+      setError(extractErrorMessage(err, 'Não foi possível concluir o cadastro.'))
     } finally {
       setLoading(false)
     }
@@ -363,8 +381,8 @@ const Register = () => {
 
             <Button
               type="submit"
-              loading={loading}
-              className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0 mt-2"
+              disabled={loading}
+              className="w-full bg-white text-black text-sm font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors border-0 mt-2 disabled:opacity-60"
               label={loading ? 'Criando conta...' : 'Criar conta'}
             />
           </form>

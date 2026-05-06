@@ -10,8 +10,6 @@ import org.springframework.web.servlet.function.RequestPredicates;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
-import java.net.URI;
-
 @Configuration
 public class GatewayRoutesConfig {
 
@@ -25,7 +23,7 @@ public class GatewayRoutesConfig {
     public RouterFunction<ServerResponse> authServiceRoute() {
         return GatewayRouterFunctions.route("auth-service")
                 .route(RequestPredicates.path("/users/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri("lb://auth-service"))
+                .before(BeforeFilterFunctions.uri("http://auth-service:8081"))
                 .filter(jwtAuthGatewayFilter.filter())
                 .build();
     }
@@ -34,7 +32,7 @@ public class GatewayRoutesConfig {
     public RouterFunction<ServerResponse> productServiceRoute() {
         return GatewayRouterFunctions.route("product-service")
                 .route(RequestPredicates.path("/products/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri("lb://product-service"))
+                .before(BeforeFilterFunctions.uri("http://product-service:8083"))
                 .filter(jwtAuthGatewayFilter.filter())
                 .build();
     }
@@ -43,7 +41,7 @@ public class GatewayRoutesConfig {
     public RouterFunction<ServerResponse> cartServiceRoute() {
         return GatewayRouterFunctions.route("cart-service")
                 .route(RequestPredicates.path("/cart/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri("lb://cart-service"))
+                .before(BeforeFilterFunctions.uri("http://cart-service:8082"))
                 .filter(jwtAuthGatewayFilter.filter())
                 .build();
     }
@@ -52,7 +50,7 @@ public class GatewayRoutesConfig {
     public RouterFunction<ServerResponse> orderServiceRoute() {
         return GatewayRouterFunctions.route("order-service")
                 .route(RequestPredicates.path("/orders/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri("lb://order-service"))
+                .before(BeforeFilterFunctions.uri("http://order-service:8084"))
                 .filter(jwtAuthGatewayFilter.filter())
                 .build();
     }
@@ -61,7 +59,7 @@ public class GatewayRoutesConfig {
     public RouterFunction<ServerResponse> notificationServiceRoute() {
         return GatewayRouterFunctions.route("notification-service")
                 .route(RequestPredicates.path("/notifications/**"), HandlerFunctions.http())
-                .before(BeforeFilterFunctions.uri("lb://notification-service"))
+                .before(BeforeFilterFunctions.uri("http://notification-service:8085"))
                 .filter(jwtAuthGatewayFilter.filter())
                 .build();
     }

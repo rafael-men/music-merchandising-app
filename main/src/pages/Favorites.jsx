@@ -1,12 +1,60 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, ArrowLeft } from 'lucide-react'
-import { allProducts } from '../data/catalog'
+import { Heart, ArrowLeft, LogIn } from 'lucide-react'
 import { useFavorites } from '../hooks/useFavorites'
 import ProductCard from '../Components/ProductCard'
+import { useAuth } from '../contexts/AuthContext'
+import { productsApi } from '../api/products'
+import { extractErrorMessage } from '../api/client'
 
 const Favorites = () => {
-  const { favorites } = useFavorites()
-  const products = allProducts.filter(p => favorites.has(p.id))
+  const { isAuthenticated } = useAuth()
+  const { favorites, loading: favoritesLoading } = useFavorites()
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let cancelled = false
+    setLoading(true)
+    productsApi
+      .list()
+      .then((data) => {
+        if (!cancelled) setProducts(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => {
+        if (!cancelled) setError(extractErrorMessage(err, 'Falha ao carregar produtos.'))
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [isAuthenticated])
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md text-center bg-gray-900 border border-gray-800 rounded-2xl p-8">
+          <div className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
+            <Heart size={22} className="text-white" />
+          </div>
+          <h2 className="text-lg font-semibold mb-1">Faça login para ver seus favoritos</h2>
+          <p className="text-sm text-gray-400 mb-6">Você precisa estar logado para salvar e visualizar produtos favoritos.</p>
+          <div className="flex flex-col gap-2">
+            <Link to="/login" className="inline-flex items-center justify-center gap-2 text-sm font-medium text-black bg-white py-2.5 rounded-lg no-underline hover:bg-gray-200 transition-colors">
+              <LogIn size={14} />
+              Entrar
+            </Link>
+            <Link to="/register" className="inline-flex items-center justify-center text-sm font-medium text-gray-300 border border-gray-700 py-2.5 rounded-lg no-underline hover:border-gray-500 hover:text-white transition-colors">
+              Criar conta
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const filtered = products.filter((p) => favorites.has(p.id))
+  const isLoading = loading || favoritesLoading
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -21,7 +69,17 @@ const Favorites = () => {
           <p className="text-gray-400 text-sm mt-1">Produtos que você salvou para depois.</p>
         </div>
 
-        {products.length === 0 ? (
+        {isLoading && (
+          <div className="text-center py-24 text-gray-500 text-sm">Carregando favoritos...</div>
+        )}
+
+        {error && !isLoading && (
+          <div className="bg-red-900/20 border border-red-900/40 rounded-xl p-6 text-center text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
+        {!isLoading && !error && filtered.length === 0 && (
           <div className="text-center py-24 text-gray-600">
             <Heart size={48} className="mx-auto mb-4 opacity-20" />
             <p className="text-lg mb-2">Nenhum favorito ainda.</p>
@@ -34,13 +92,15 @@ const Favorites = () => {
               Ir para a loja
             </Link>
           </div>
-        ) : (
+        )}
+
+        {!isLoading && !error && filtered.length > 0 && (
           <>
             <p className="text-xs text-gray-500 mb-6">
-              {products.length} {products.length === 1 ? 'produto' : 'produtos'}
+              {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map(product => (
+              {filtered.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

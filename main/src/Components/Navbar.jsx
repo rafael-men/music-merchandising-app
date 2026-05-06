@@ -1,11 +1,22 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ShoppingCart, User, Music2, Menu, X, Heart, Search } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ShoppingCart, User, Music2, Menu, X, Heart, Search, LogIn, LogOut } from 'lucide-react'
 import SearchBar from './SearchBar'
+import { useAuth } from '../contexts/AuthContext'
 
 const Navbar = () => {
+  const navigate = useNavigate()
+  const { isAuthenticated, user, logout } = useAuth()
   const [isMobileOpen, setMobileOpen] = useState(false)
   const [isMobileSearchOpen, setMobileSearchOpen] = useState(false)
+
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Conta'
+
+  const handleLogout = () => {
+    logout()
+    setMobileOpen(false)
+    navigate('/')
+  }
 
   return (
     <nav className='text-white bg-black border-b border-gray-800 sticky top-0 z-50'>
@@ -28,10 +39,28 @@ const Navbar = () => {
             <ShoppingCart size={18} />
             <span>Carrinho</span>
           </Link>
-          <Link to="/perfil" className='flex items-center gap-2 text-sm font-medium no-underline text-gray-300 hover:text-white transition-colors duration-200'>
-            <User size={18} />
-            <span>Rafael</span>
-          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <Link to="/perfil" className='flex items-center gap-2 text-sm font-medium no-underline text-gray-300 hover:text-white transition-colors duration-200'>
+                <User size={18} />
+                <span className='max-w-[120px] truncate'>{displayName}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label="Sair"
+                className='text-gray-400 hover:text-red-400 transition-colors duration-200'
+              >
+                <LogOut size={18} />
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className='flex items-center gap-2 text-sm font-medium no-underline text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-colors duration-200 px-4 py-1.5 rounded-lg'>
+              <LogIn size={16} />
+              <span>Entrar</span>
+            </Link>
+          )}
         </div>
 
         <div className='flex items-center gap-2 md:hidden'>
@@ -59,19 +88,53 @@ const Navbar = () => {
       )}
 
       {isMobileOpen && (
-        <div className="border-t border-gray-800 py-3 md:hidden">
-          <Link to="/favoritos" className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'>
+        <div className="border-t border-gray-800 py-3 md:hidden flex flex-col">
+          <Link
+            to="/favoritos"
+            onClick={() => setMobileOpen(false)}
+            className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'
+          >
             <Heart size={16} />
             <span>Favoritos</span>
           </Link>
-          <Link to="/carrinho" className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'>
+          <Link
+            to="/carrinho"
+            onClick={() => setMobileOpen(false)}
+            className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'
+          >
             <ShoppingCart size={16} />
             <span>Carrinho</span>
           </Link>
-          <Link to="/perfil" className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'>
-            <User size={16} />
-            <span>Rafael</span>
-          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/perfil"
+                onClick={() => setMobileOpen(false)}
+                className='flex items-center justify-center gap-2 py-2 no-underline text-gray-300 hover:text-white transition-colors'
+              >
+                <User size={16} />
+                <span>{displayName}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className='flex items-center justify-center gap-2 py-2 text-red-400 hover:text-red-300 transition-colors'
+              >
+                <LogOut size={16} />
+                <span>Sair</span>
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setMobileOpen(false)}
+              className='mx-4 mt-2 flex items-center justify-center gap-2 py-2 no-underline text-white bg-white/10 border border-white/20 hover:bg-white/20 transition-colors rounded-lg'
+            >
+              <LogIn size={16} />
+              <span>Entrar</span>
+            </Link>
+          )}
         </div>
       )}
     </nav>
