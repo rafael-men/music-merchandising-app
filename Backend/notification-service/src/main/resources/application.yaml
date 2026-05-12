@@ -13,6 +13,9 @@ mongock:
     connection-string: mongodb://mongodb:27017
     database-name: notification_db
 
+internal:
+  secret: dev-internal-secret-change-me
+
 server:
   port: 8085
   tomcat:

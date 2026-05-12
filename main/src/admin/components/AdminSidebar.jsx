@@ -11,7 +11,8 @@ const NAV_ITEMS = [
 
 const AdminSidebar = ({ open, onClose }) => {
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Admin'
 
   const handleLogout = () => {
     logout()
@@ -35,22 +36,29 @@ const AdminSidebar = ({ open, onClose }) => {
           ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
         `}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-          <div className="flex items-center gap-2">
-            <Music2 size={20} className="text-white" />
-            <div>
-              <p className="text-sm font-bold text-white leading-none">Music Store</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">Admin</p>
+        <div className="flex items-center justify-between px-5 py-5 border-b border-gray-800">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+              <Music2 size={16} className="text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-none mb-1">Painel</p>
+              <p className="text-sm font-semibold text-white truncate leading-none">Music Store</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden text-gray-400 hover:text-white transition-colors"
+            className="lg:hidden text-gray-400 hover:text-white transition-colors shrink-0"
             aria-label="Fechar menu"
           >
             <X size={20} />
           </button>
+        </div>
+
+        <div className="px-5 py-3 border-b border-gray-800">
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">Logado como</p>
+          <p className="text-xs text-gray-300 truncate">{displayName}</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">

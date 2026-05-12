@@ -6,7 +6,7 @@ import { Dropdown } from 'primereact/dropdown'
 import { Button } from 'primereact/button'
 import { Dialog } from 'primereact/dialog'
 import { Toast } from 'primereact/toast'
-import { ShoppingBag, Search, Clock, CheckCircle2, Truck, XCircle, Pencil } from 'lucide-react'
+import { ShoppingBag, Search, Clock, CheckCircle2, Truck, XCircle, Pencil, MapPin } from 'lucide-react'
 import { adminTablePt, adminColumnPt, adminPaginatorProps } from '../components/tableStyles'
 import { ordersApi } from '../../api/orders'
 import { usersApi } from '../../api/users'
@@ -28,11 +28,42 @@ const STATUS_META = {
   CANCELLED: { label: 'Cancelado',  Icon: XCircle,      color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/30' },
 }
 
+// Transições permitidas a partir de cada status
+const ALLOWED_TRANSITIONS = {
+  PENDING:   ['PENDING', 'CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['CONFIRMED', 'SHIPPED', 'CANCELLED'],
+  SHIPPED:   ['SHIPPED', 'DELIVERED'],
+  DELIVERED: ['DELIVERED'],
+  CANCELLED: ['CANCELLED'],
+}
+
+// Status em que tracking pode ser editado
+const TRACKING_EDITABLE_STATUSES = new Set(['CONFIRMED', 'SHIPPED'])
+
 const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  iso ? new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+
+const formatAddressShort = (address) => {
+  if (!address) return '—'
+  const city = address.city
+  const state = address.state
+  if (city && state) return `${city}/${state}`
+  return city || state || '—'
+}
+
+const formatAddressFull = (address) => {
+  if (!address) return ''
+  const parts = []
+  if (address.street) parts.push(address.street + (address.number ? `, ${address.number}` : ''))
+  if (address.complement) parts.push(address.complement)
+  if (address.neighborhood) parts.push(address.neighborhood)
+  if (address.city || address.state) parts.push(`${address.city || ''}${address.state ? '/' + address.state : ''}`)
+  if (address.zipCode) parts.push(`CEP ${address.zipCode}`)
+  return parts.join(' · ')
+}
 
 const dropdownPt = {
   root: { className: 'w-full h-[38px] bg-gray-800 border border-gray-700 rounded-lg flex items-center hover:border-gray-600 focus-within:border-gray-500 transition-colors' },
@@ -41,13 +72,20 @@ const dropdownPt = {
   clearIcon: { className: 'text-gray-500 mr-2 cursor-pointer hover:text-gray-300' },
   panel: { className: 'bg-gray-800 border border-gray-700 rounded-lg mt-1 shadow-xl shadow-black/40 overflow-hidden' },
   list: { className: 'list-none m-0 p-1' },
-  item: { className: 'text-sm text-gray-200 px-3 py-2 hover:bg-gray-700 cursor-pointer list-none rounded' },
+  item: ({ context }) => ({
+    className: `text-sm px-3 py-2 cursor-pointer list-none rounded ${
+      context?.disabled
+        ? 'text-gray-600 opacity-50 cursor-not-allowed'
+        : 'text-gray-200 hover:bg-gray-700'
+    }`,
+  }),
 }
 
 const tablePt = adminTablePt
 const columnPt = adminColumnPt
 
 const inputClass = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors'
+const inputDisabledClass = 'w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-500 placeholder-gray-700 cursor-not-allowed'
 const labelClass = 'block text-xs font-medium text-gray-400 mb-1.5'
 
 const AdminOrders = () => {
@@ -92,6 +130,7 @@ const AdminOrders = () => {
         ...o,
         customer: user?.name || '—',
         email: user?.email || o.userId,
+        address: user?.address || null,
         itemsCount: (o.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0),
       }
     }),
@@ -115,7 +154,8 @@ const AdminOrders = () => {
     setEditForm({
       status: row.status,
       trackingCode: row.trackingCode || '',
-      carrier: row.carrier || '',
+      carrier: row.carrier || 'Correios',
+      trackingUrl: row.trackingUrl || '',
     })
   }
 
@@ -124,23 +164,50 @@ const AdminOrders = () => {
     setEditForm(null)
   }
 
+  const allowedNextStatuses = useMemo(() => {
+    if (!editing) return STATUS_OPTIONS
+    const allowed = new Set(ALLOWED_TRANSITIONS[editing.status] || [editing.status])
+    return STATUS_OPTIONS.map((opt) => ({
+      ...opt,
+      disabled: !allowed.has(opt.value),
+    }))
+  }, [editing])
+
+  const canEditTracking = editing && TRACKING_EDITABLE_STATUSES.has(editForm?.status || editing.status)
+
   const handleSave = async () => {
     setSaving(true)
     try {
       let updated = null
+
+      // Bloqueio de transição inválida no client (defesa em profundidade)
+      const allowed = new Set(ALLOWED_TRANSITIONS[editing.status] || [editing.status])
+      if (!allowed.has(editForm.status)) {
+        toast.current?.show({
+          severity: 'warn',
+          summary: 'Transição não permitida',
+          detail: `Não é possível mudar de ${STATUS_META[editing.status].label} para ${STATUS_META[editForm.status].label}.`,
+          life: 3500,
+        })
+        return
+      }
+
       if (editForm.status && editForm.status !== editing.status) {
         updated = await ordersApi.updateStatus(editing.id, editForm.status)
       }
-      if (editForm.trackingCode && editForm.carrier) {
+
+      if (canEditTracking && editForm.trackingCode && editForm.carrier) {
         updated = await ordersApi.updateTracking(editing.id, {
-          trackingCode: editForm.trackingCode,
-          carrier: editForm.carrier,
-          trackingUrl: editForm.trackingUrl || null,
+          trackingCode: editForm.trackingCode.trim(),
+          carrier: editForm.carrier.trim(),
+          trackingUrl: editForm.trackingUrl?.trim() || null,
         })
       }
+
       if (updated) {
         setOrders((prev) => prev.map((o) => (o.id === editing.id ? updated : o)))
       }
+
       toast.current?.show({
         severity: 'success',
         summary: 'Pedido atualizado',
@@ -161,7 +228,7 @@ const AdminOrders = () => {
   }
 
   const idTemplate = (row) => (
-    <span className="font-mono text-xs text-white">#{row.id}</span>
+    <span className="font-mono text-xs text-white">#{row.id?.slice(-8) || '—'}</span>
   )
 
   const customerTemplate = (row) => (
@@ -171,8 +238,17 @@ const AdminOrders = () => {
     </div>
   )
 
+  const addressTemplate = (row) => (
+    <span
+      className="text-xs text-gray-300"
+      title={formatAddressFull(row.address)}
+    >
+      {formatAddressShort(row.address)}
+    </span>
+  )
+
   const statusTemplate = (row) => {
-    const meta = STATUS_META[row.status]
+    const meta = STATUS_META[row.status] || STATUS_META.PENDING
     const StatusIcon = meta.Icon
     return (
       <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${meta.color} ${meta.bg} ${meta.border} border px-2 py-0.5 rounded-full`}>
@@ -255,90 +331,116 @@ const AdminOrders = () => {
         {...adminPaginatorProps}
         emptyMessage={loading ? 'Carregando...' : 'Nenhum pedido encontrado.'}
       >
-        <Column header="Pedido"   body={idTemplate}       pt={columnPt} />
-        <Column header="Cliente"  body={customerTemplate} pt={columnPt} />
-        <Column header="Itens"    field="itemsCount"      pt={columnPt} />
-        <Column header="Total"    body={totalTemplate}    pt={columnPt} />
-        <Column header="Rastreio" body={trackingTemplate} pt={columnPt} />
-        <Column header="Status"   body={statusTemplate}   pt={columnPt} />
-        <Column header="Data"     body={dateTemplate}     pt={columnPt} />
-        <Column header=""         body={actionsTemplate}  pt={columnPt} />
+        <Column header="Pedido"    body={idTemplate}       pt={columnPt} />
+        <Column header="Cliente"   body={customerTemplate} pt={columnPt} />
+        <Column header="Endereço"  body={addressTemplate}  pt={columnPt} />
+        <Column header="Total"     body={totalTemplate}    pt={columnPt} />
+        <Column header="Status"    body={statusTemplate}   pt={columnPt} />
+        <Column header="Rastreio"  body={trackingTemplate} pt={columnPt} />
+        <Column header="Data"      body={dateTemplate}     pt={columnPt} />
+        <Column header=""          body={actionsTemplate}  pt={columnPt} />
       </DataTable>
 
       <Dialog
         visible={!!editing}
         onHide={closeEdit}
-        header={null}
         showHeader={false}
         modal
         dismissableMask
         pt={{
           mask: { className: 'bg-black/70 backdrop-blur-sm' },
-          root: { className: 'w-full max-w-md mx-4' },
-          content: { className: 'bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden p-0' },
+          root: { className: 'w-full max-w-lg mx-4 max-h-[90vh]' },
+          content: { className: 'bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden p-0 flex flex-col max-h-[90vh]' },
         }}
       >
         {editing && editForm && (
-          <div>
-            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
-              <div>
+          <div className="flex flex-col max-h-[90vh]">
+            <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
+              <div className="min-w-0">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider">Editar pedido</p>
-                <p className="text-sm font-mono font-semibold text-white">#{editing.id}</p>
+                <p className="text-sm font-mono font-semibold text-white truncate">#{editing.id}</p>
               </div>
               <button
                 type="button"
                 onClick={closeEdit}
-                className="text-gray-500 hover:text-white transition-colors"
+                className="text-gray-500 hover:text-white transition-colors shrink-0"
                 aria-label="Fechar"
               >
                 <XCircle size={20} />
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <p className="text-gray-500">Cliente</p>
+                  <p className="text-gray-500 mb-0.5">Cliente</p>
                   <p className="text-white truncate">{editing.customer}</p>
+                  <p className="text-gray-500 truncate text-[11px]">{editing.email}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Total</p>
+                  <p className="text-gray-500 mb-0.5">Total pago</p>
                   <p className="text-green-400 font-medium">{formatBRL(editing.total)}</p>
+                  <p className="text-gray-500 text-[11px]">{formatDate(editing.createdAt)}</p>
                 </div>
               </div>
+
+              {editing.address && (
+                <div className="bg-gray-800/40 border border-gray-800 rounded-lg p-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <MapPin size={12} className="text-gray-400" />
+                    <p className="text-[11px] text-gray-400 uppercase tracking-wider">Endereço de entrega</p>
+                  </div>
+                  <p className="text-xs text-gray-200 leading-relaxed">
+                    {formatAddressFull(editing.address) || '—'}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className={labelClass}>Status</label>
                 <Dropdown
                   value={editForm.status}
                   onChange={(e) => setEditForm((f) => ({ ...f, status: e.value }))}
-                  options={STATUS_OPTIONS}
+                  options={allowedNextStatuses}
+                  optionDisabled="disabled"
                   pt={dropdownPt}
                 />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Apenas transições válidas estão habilitadas.
+                </p>
               </div>
 
-              <div>
-                <label className={labelClass}>Código de rastreio</label>
+              <div className={canEditTracking ? '' : 'opacity-60'}>
+                <label className={labelClass}>
+                  Código de rastreio
+                  {!canEditTracking && (
+                    <span className="ml-2 text-[10px] text-yellow-400 normal-case">
+                      Disponível após confirmação do pagamento
+                    </span>
+                  )}
+                </label>
                 <InputText
                   value={editForm.trackingCode}
                   onChange={(e) => setEditForm((f) => ({ ...f, trackingCode: e.target.value }))}
                   placeholder="BR123456789MS"
-                  className={inputClass}
+                  disabled={!canEditTracking}
+                  className={canEditTracking ? inputClass : inputDisabledClass}
                 />
               </div>
 
-              <div>
+              <div className={canEditTracking ? '' : 'opacity-60'}>
                 <label className={labelClass}>Transportadora</label>
                 <InputText
                   value={editForm.carrier}
                   onChange={(e) => setEditForm((f) => ({ ...f, carrier: e.target.value }))}
                   placeholder="Correios"
-                  className={inputClass}
+                  disabled={!canEditTracking}
+                  className={canEditTracking ? inputClass : inputDisabledClass}
                 />
               </div>
             </div>
 
-            <div className="flex gap-2 px-5 py-4 border-t border-gray-800">
+            <div className="flex gap-2 px-5 py-4 border-t border-gray-800 shrink-0">
               <Button
                 type="button"
                 onClick={closeEdit}

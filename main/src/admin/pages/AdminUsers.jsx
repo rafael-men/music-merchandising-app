@@ -1,20 +1,53 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { InputText } from 'primereact/inputtext'
-import { Users, Search, ShieldCheck, User as UserIcon } from 'lucide-react'
+import { Button } from 'primereact/button'
+import { Dialog } from 'primereact/dialog'
+import { Toast } from 'primereact/toast'
+import { Users, Search, ShieldCheck, User as UserIcon, Trash2, AlertTriangle } from 'lucide-react'
 import { adminTablePt, adminColumnPt, adminPaginatorProps } from '../components/tableStyles'
 import { usersApi } from '../../api/users'
 import { extractErrorMessage } from '../../api/client'
+import { useAuth } from '../../contexts/AuthContext'
 
 const tablePt = adminTablePt
 const columnPt = adminColumnPt
 
 const AdminUsers = () => {
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [deleting, setDeleting] = useState(null)
+  const [deletingInProgress, setDeletingInProgress] = useState(false)
+  const toast = useRef(null)
+
+  const handleDelete = async () => {
+    if (!deleting) return
+    setDeletingInProgress(true)
+    try {
+      await usersApi.remove(deleting.id)
+      setUsers((prev) => prev.filter((u) => u.id !== deleting.id))
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Usuário removido',
+        detail: deleting.name || deleting.email,
+        life: 2500,
+      })
+      setDeleting(null)
+    } catch (err) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao remover',
+        detail: extractErrorMessage(err, 'Falha ao remover usuário.'),
+        life: 3500,
+      })
+    } finally {
+      setDeletingInProgress(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -86,8 +119,28 @@ const AdminUsers = () => {
     </span>
   )
 
+  const actionsTemplate = (row) => {
+    const isSelf = currentUser?.id === row.id
+    return (
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setDeleting(row)}
+          disabled={isSelf}
+          aria-label="Remover usuário"
+          title={isSelf ? 'Você não pode remover sua própria conta' : 'Remover usuário'}
+          className="p-1.5 rounded-lg text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div>
+      <Toast ref={toast} position="top-right" />
+
       <div className="flex items-center gap-3 mb-2">
         <Users size={22} className="text-white" />
         <h1 className="text-2xl font-bold text-white">Usuários</h1>
@@ -124,7 +177,55 @@ const AdminUsers = () => {
         <Column header="Cidade"    body={cityTemplate}      pt={columnPt} />
         <Column header="Favoritos" body={favoritesTemplate} pt={columnPt} />
         <Column header="Tipo"      body={roleTemplate}      pt={columnPt} />
+        <Column header=""          body={actionsTemplate}   pt={columnPt} />
       </DataTable>
+
+      <Dialog
+        visible={!!deleting}
+        onHide={() => setDeleting(null)}
+        showHeader={false}
+        modal
+        dismissableMask
+        pt={{
+          mask: { className: 'bg-black/70 backdrop-blur-sm' },
+          root: { className: 'w-full max-w-sm mx-4' },
+          content: { className: 'bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden p-0' },
+        }}
+      >
+        {deleting && (
+          <div>
+            <div className="p-5 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3">
+                <AlertTriangle size={22} className="text-red-400" />
+              </div>
+              <h3 className="text-base font-semibold text-white mb-1">Remover usuário?</h3>
+              <p className="text-sm text-gray-400">
+                <span className="text-gray-200">{deleting.name || deleting.email}</span> será removido permanentemente.
+              </p>
+              {deleting.role === 'ADMIN' && (
+                <p className="text-xs text-yellow-400 mt-2">
+                  Atenção: esta conta tem privilégios de administrador.
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 px-5 pb-5">
+              <Button
+                type="button"
+                onClick={() => setDeleting(null)}
+                label="Cancelar"
+                className="flex-1 text-sm font-medium text-gray-300 border border-gray-700 py-2 rounded-lg hover:border-gray-500 hover:text-white transition-colors bg-transparent"
+              />
+              <Button
+                type="button"
+                onClick={handleDelete}
+                disabled={deletingInProgress}
+                label={deletingInProgress ? 'Removendo...' : 'Remover'}
+                className="flex-1 text-sm font-medium text-white bg-red-600 py-2 rounded-lg hover:bg-red-500 transition-colors border-0 disabled:opacity-60"
+              />
+            </div>
+          </div>
+        )}
+      </Dialog>
     </div>
   )
 }

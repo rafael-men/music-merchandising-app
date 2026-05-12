@@ -25,21 +25,32 @@ public class OrderSecurityInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        if ("PATCH".equalsIgnoreCase(method) && path.contains("/status")) {
-            if (!"ADMIN".equals(role)) {
+        boolean isAdmin = "ADMIN".equals(role);
+        boolean isStatusUpdate = "PATCH".equalsIgnoreCase(method) && path.contains("/status");
+        boolean isTrackingUpdate = "PATCH".equalsIgnoreCase(method) && path.contains("/tracking");
+        boolean isListAll = "GET".equalsIgnoreCase(method) && ("/orders".equals(path) || "/orders/".equals(path));
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> pathVars = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+        boolean isGetById = "GET".equalsIgnoreCase(method)
+                && pathVars != null
+                && pathVars.containsKey("id")
+                && !pathVars.containsKey("userId");
+
+        if (isStatusUpdate || isTrackingUpdate || isListAll || isGetById) {
+            if (!isAdmin) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
-                response.getWriter().write("{\"error\":\"Apenas administradores podem atualizar o status do pedido\"}");
+                response.getWriter().write("{\"error\":\"Apenas administradores podem acessar este recurso\"}");
                 return false;
             }
             return true;
         }
 
-        @SuppressWarnings("unchecked")
-        Map<String, String> pathVars = (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+        // Rotas escopo de dono: /orders/user/{userId} — só o próprio (admin pode tudo)
         if (pathVars != null) {
             String pathUserId = pathVars.get("userId");
-            if (pathUserId != null && !pathUserId.equals(authenticatedUserId)) {
+            if (pathUserId != null && !isAdmin && !pathUserId.equals(authenticatedUserId)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\":\"Acesso negado aos pedidos de outro usuário\"}");
