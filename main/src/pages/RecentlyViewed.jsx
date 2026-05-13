@@ -67,7 +67,7 @@ const RecentlyViewed = () => {
         {!loading && products.length > 0 && (
           <>
             <p className="text-xs text-gray-500 mb-6">{products.length} {products.length === 1 ? 'produto' : 'produtos'} visitados</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

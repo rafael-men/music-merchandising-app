@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, ArrowLeft, LogIn } from 'lucide-react'
-import { useFavorites } from '../hooks/useFavorites'
+import { useFavorites } from '../contexts/FavoritesContext'
 import ProductCard from '../Components/ProductCard'
 import { useAuth } from '../contexts/AuthContext'
 import { productsApi } from '../api/products'
@@ -99,7 +99,7 @@ const Favorites = () => {
             <p className="text-xs text-gray-500 mb-6">
               {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {filtered.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}

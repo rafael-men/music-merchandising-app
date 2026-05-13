@@ -1,6 +1,7 @@
 import { Route, Routes, Outlet } from 'react-router-dom';
 import { ThemeProvider } from '@material-tailwind/react';
 import { AuthProvider } from './contexts/AuthContext';
+import { FavoritesProvider } from './contexts/FavoritesContext';
 import AdminRoute from './Components/AdminRoute';
 import Navbar from './Components/Navbar';
 import NewDetail from './pages/NewDetail';
@@ -37,8 +38,9 @@ const PublicLayout = () => (
 function App() {
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <div className="bg-gray-950 min-h-screen">
+      <FavoritesProvider>
+        <ThemeProvider>
+          <div className="bg-gray-950 min-h-screen">
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<MainPage />} />
@@ -63,9 +65,10 @@ function App() {
               <Route path="produtos" element={<AdminProducts />} />
               <Route path="usuarios" element={<AdminUsers />} />
             </Route>
-          </Routes>
-        </div>
-      </ThemeProvider>
+            </Routes>
+          </div>
+        </ThemeProvider>
+      </FavoritesProvider>
     </AuthProvider>
   );
 }

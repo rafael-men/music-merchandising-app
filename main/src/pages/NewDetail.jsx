@@ -5,7 +5,7 @@ import { Truck, ShoppingCart, CreditCard, Heart } from 'lucide-react'
 import ProductCard from '../Components/ProductCard'
 import ProductImage from '../Components/ProductImage'
 import { allProducts } from '../data/catalog'
-import { useFavorites } from '../hooks/useFavorites'
+import { useFavorites } from '../contexts/FavoritesContext'
 
 const novidades = [
   {
@@ -179,7 +179,7 @@ const NewDetail = () => {
                 <h2 className="text-lg font-bold text-white">Produtos Relacionados</h2>
                 <span className="text-xs text-gray-500">{related.length} {related.length === 1 ? 'produto' : 'produtos'}</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {related.map(p => (
                   <ProductCard key={p.id} product={p} />
                 ))}

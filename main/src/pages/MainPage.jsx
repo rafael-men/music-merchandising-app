@@ -65,7 +65,7 @@ const MainPage = () => {
         </div>
         <div className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {items.map((product) => (
-            <div key={product.id} className="snap-start shrink-0 w-64 sm:w-56 md:w-60 flex">
+            <div key={product.id} className="snap-start shrink-0 w-52 sm:w-48 md:w-52 flex">
               <ProductCard product={product} />
             </div>
           ))}

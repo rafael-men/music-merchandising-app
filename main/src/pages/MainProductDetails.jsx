@@ -5,24 +5,28 @@ import { Truck, ShoppingCart, CreditCard, Heart } from 'lucide-react'
 import StockBadge from '../Components/StockBadge'
 import ProductCard from '../Components/ProductCard'
 import ProductImage from '../Components/ProductImage'
-import { useFavorites } from '../hooks/useFavorites'
+import { useFavorites } from '../contexts/FavoritesContext'
 import { formatCategory } from '../utils/categories'
 import { useLoginPrompt } from '../hooks/useLoginPrompt'
 import LoginPromptModal from '../Components/LoginPromptModal'
 import { productsApi } from '../api/products'
+import { cartApi } from '../api/cart'
 import { extractErrorMessage } from '../api/client'
+import { useAuth } from '../contexts/AuthContext'
 
 const formatBRL = (value) =>
   (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const ProductDetails = () => {
   const { id } = useParams()
+  const { user } = useAuth()
   const [cep, setCep] = useState('')
   const [frete, setFrete] = useState(null)
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [addedToCart, setAddedToCart] = useState(false)
 
   const { toggle, isFavorite } = useFavorites()
   const favorited = isFavorite(product?.id)
@@ -82,7 +86,21 @@ const ProductDetails = () => {
     })
 
   const handleAddToCart = () =>
-    requireAuth(() => alert(`${product.title} foi adicionado ao carrinho.`), {
+    requireAuth(async () => {
+      try {
+        await cartApi.addItem(user.id, {
+          productId: product.id,
+          name: product.title,
+          image: product.imageUrl || '/assets/652292.png',
+          price: product.price,
+          quantity: 1,
+        })
+        setAddedToCart(true)
+        setTimeout(() => setAddedToCart(false), 2500)
+      } catch (err) {
+        alert(extractErrorMessage(err, 'Falha ao adicionar ao carrinho.'))
+      }
+    }, {
       title: 'Faça login para adicionar ao carrinho',
       message: 'Você precisa estar logado para adicionar produtos ao carrinho.',
     })
@@ -204,7 +222,7 @@ const ProductDetails = () => {
                   disabled={stock === 0}
                   className="flex-1 flex items-center justify-center gap-2 border border-gray-600 text-white font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors duration-200 text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                 >
-                  <ShoppingCart size={16} /> Adicionar ao Carrinho
+                  <ShoppingCart size={16} /> {addedToCart ? 'Adicionado!' : 'Adicionar ao Carrinho'}
                 </button>
               </div>
 
@@ -218,7 +236,7 @@ const ProductDetails = () => {
               <h2 className="text-lg font-bold text-white">Produtos Relacionados</h2>
               <span className="text-xs text-gray-500">{related.length} {related.length === 1 ? 'produto' : 'produtos'}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {related.map(p => (
                 <ProductCard key={p.id} product={p} />
               ))}

@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingCart, Trash2, ShoppingBag, Copy, Check, Truck, QrCode, LogIn } from 'lucide-react'
+import { ShoppingCart, Trash2, ShoppingBag, Check, Truck, QrCode, LogIn, Plus, Minus } from 'lucide-react'
 import ProductImage from '../Components/ProductImage'
 import { useAuth } from '../contexts/AuthContext'
+import { cartApi } from '../api/cart'
+import { extractErrorMessage } from '../api/client'
 
-const PIX_KEY = 'pagamentos@musicstore.com.br'
+const formatBRL = (value) =>
+  (typeof value === 'number' ? value : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const LoginRequired = () => (
   <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
@@ -27,37 +30,93 @@ const LoginRequired = () => (
   </div>
 )
 
-const CartContent = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: 'Mudvayne - LD.50 CD (Importado)',
-      price: 60.88,
-      image: 'https://upload.wikimedia.org/wikipedia/pt/9/98/L.D._50_capa.jpg'
-    },
-    {
-      id: 2,
-      name: 'Bottom Ramones',
-      price: 3.52,
-      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQn2qJomzzEp4XTU9BqPVDpmS55OzvqcMrilQ&s'
-    },
-    {
-      id: 3,
-      name: 'Lifer - Lifer CD Raríssimo (Importado)',
-      price: 130.00,
-      image: 'https://i.scdn.co/image/ab67616d0000b2732577f15af6777fff11a2a083'
-    }
-  ])
+const CartContent = ({ userId }) => {
+  const [cart, setCart] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [updating, setUpdating] = useState(false)
 
   const [cep, setCep] = useState('')
   const [frete, setFrete] = useState(null)
   const [freteCalculado, setFreteCalculado] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [ordered, setOrdered] = useState(false)
 
-  const handleRemoveItem = (id) => setCartItems(cartItems.filter(item => item.id !== id))
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price, 0)
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    cartApi
+      .get(userId)
+      .then((data) => { if (!cancelled) setCart(data) })
+      .catch((err) => {
+        if (!cancelled) {
+          if (err?.response?.status === 404) {
+            setCart({ id: null, userId, items: [], total: 0 })
+          } else {
+            setError(extractErrorMessage(err, 'Falha ao carregar carrinho.'))
+          }
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [userId])
+
+  const items = cart?.items || []
+  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
   const totalComFrete = subtotal + (frete ?? 0)
+
+  const handleAddOne = async (item) => {
+    setUpdating(true)
+    try {
+      const updated = await cartApi.addItem(userId, {
+        productId: item.productId,
+        name: item.name,
+        image: item.image,
+        price: item.price,
+        quantity: 1,
+      })
+      setCart(updated)
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Falha ao atualizar carrinho.'))
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleRemoveOne = async (item) => {
+    setUpdating(true)
+    try {
+      if (item.quantity <= 1) {
+        const updated = await cartApi.removeItem(userId, item.productId)
+        setCart(updated)
+      } else {
+        await cartApi.removeItem(userId, item.productId)
+        const updated = await cartApi.addItem(userId, {
+          productId: item.productId,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          quantity: item.quantity - 1,
+        })
+        setCart(updated)
+      }
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Falha ao atualizar carrinho.'))
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleRemoveAll = async (item) => {
+    setUpdating(true)
+    try {
+      const updated = await cartApi.removeItem(userId, item.productId)
+      setCart(updated)
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Falha ao remover item.'))
+    } finally {
+      setUpdating(false)
+    }
+  }
 
   const handleCalcularFrete = () => {
     if (!cep || cep.replace(/\D/g, '').length < 8) return
@@ -66,13 +125,25 @@ const CartContent = () => {
     setFreteCalculado(true)
   }
 
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(PIX_KEY)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleFinalize = async () => {
+    setUpdating(true)
+    try {
+      await cartApi.clear(userId)
+      setOrdered(true)
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Falha ao finalizar pedido.'))
+    } finally {
+      setUpdating(false)
+    }
   }
 
-  const handleFinalize = () => setOrdered(true)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Carregando carrinho...</p>
+      </div>
+    )
+  }
 
   if (ordered) {
     return (
@@ -82,18 +153,17 @@ const CartContent = () => {
             <Check size={28} className="text-green-400" />
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Pedido realizado!</h2>
-          <p className="text-gray-400 text-sm mb-1">Aguardando confirmação do pagamento via PIX.</p>
-          <p className="text-green-400 font-bold text-lg mb-6">R$ {totalComFrete.toFixed(2)}</p>
-          <div className="bg-gray-800 rounded-xl p-4 text-left">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Chave PIX</p>
-            <div className="flex items-center gap-2">
-              <span className="flex-1 text-sm text-white font-mono truncate">{PIX_KEY}</span>
-              <button onClick={handleCopyKey} className="shrink-0 text-gray-400 hover:text-white transition-colors">
-                {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
-              </button>
-            </div>
-          </div>
-          <p className="text-gray-600 text-xs mt-4">Status: <span className="text-yellow-500 font-medium">Aguardando pagamento</span></p>
+          <p className="text-gray-400 text-sm mb-1">Você pode acompanhar o pedido na sua área de pedidos.</p>
+          <p className="text-green-400 font-bold text-lg mb-6">{formatBRL(totalComFrete)}</p>
+          <p className="text-gray-600 text-xs">
+            Status: <span className="text-yellow-500 font-medium">Aguardando pagamento</span>
+          </p>
+          <Link
+            to="/perfil/pedidos"
+            className="inline-block mt-6 text-sm font-medium text-black bg-white px-4 py-2 rounded-lg no-underline hover:bg-gray-200 transition-colors"
+          >
+            Ver meus pedidos
+          </Link>
         </div>
       </div>
     )
@@ -105,35 +175,70 @@ const CartContent = () => {
         <div className="flex items-center gap-3 mb-8">
           <ShoppingCart size={24} className="text-white" />
           <h2 className="text-2xl font-bold text-white">Meu Carrinho</h2>
-          {cartItems.length > 0 && (
+          {items.length > 0 && (
             <span className="ml-auto text-xs text-gray-500">
-              {cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'}
+              {items.reduce((s, i) => s + i.quantity, 0)} {items.reduce((s, i) => s + i.quantity, 0) === 1 ? 'item' : 'itens'}
             </span>
           )}
         </div>
 
-        {cartItems.length === 0 ? (
+        {error && (
+          <div className="bg-red-900/20 border border-red-900/40 rounded-lg px-4 py-3 mb-4 text-sm text-red-300">
+            {error}
+          </div>
+        )}
+
+        {items.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             <ShoppingBag size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Seu carrinho está vazio.</p>
+            <p className="text-lg mb-1">Seu carrinho está vazio.</p>
+            <Link
+              to="/"
+              className="inline-block mt-4 text-sm text-gray-400 hover:text-white no-underline border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-lg transition-colors"
+            >
+              Explorar produtos
+            </Link>
           </div>
         ) : (
           <>
             <div className="space-y-3 mb-6">
-              {cartItems.map(item => (
-                <div key={item.id} className="flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <ProductImage src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
+              {items.map(item => (
+                <div key={item.productId} className="flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
+                  <ProductImage src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover shrink-0 bg-gray-800" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-100 truncate">{item.name}</p>
-                    <p className="text-green-400 font-bold text-base mt-1">R$ {item.price.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-gray-100 truncate mb-1">{item.name}</p>
+                    <p className="text-xs text-gray-500 mb-2">{formatBRL(item.price)} cada</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleRemoveOne(item)}
+                        disabled={updating}
+                        aria-label="Diminuir quantidade"
+                        className="w-7 h-7 rounded-md border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="text-sm text-white min-w-[24px] text-center font-medium">{item.quantity}</span>
+                      <button
+                        onClick={() => handleAddOne(item)}
+                        disabled={updating}
+                        aria-label="Aumentar quantidade"
+                        className="w-7 h-7 rounded-md border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    className="text-gray-600 hover:text-red-500 transition-colors duration-200 shrink-0 p-1"
-                    onClick={() => handleRemoveItem(item.id)}
-                    aria-label="Remover item"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <p className="text-green-400 font-bold text-base">{formatBRL(item.price * item.quantity)}</p>
+                    <button
+                      className="text-gray-600 hover:text-red-500 transition-colors duration-200 p-1"
+                      onClick={() => handleRemoveAll(item)}
+                      disabled={updating}
+                      aria-label="Remover item"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -162,17 +267,17 @@ const CartContent = () => {
               <div className="space-y-2 mb-6 pb-4 border-b border-gray-800">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
-                  <span className="text-gray-200">R$ {subtotal.toFixed(2)}</span>
+                  <span className="text-gray-200">{formatBRL(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Frete</span>
                   <span className={freteCalculado ? 'text-gray-200' : 'text-gray-600'}>
-                    {freteCalculado ? `R$ ${frete.toFixed(2)}` : 'Não calculado'}
+                    {freteCalculado ? formatBRL(frete) : 'Não calculado'}
                   </span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-gray-800">
                   <span className="text-white font-semibold">Total</span>
-                  <span className="text-xl font-bold text-white">R$ {totalComFrete.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-white">{formatBRL(totalComFrete)}</span>
                 </div>
               </div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Método de Pagamento</p>
@@ -188,25 +293,16 @@ const CartContent = () => {
                   <Check size={10} className="text-black" />
                 </div>
               </div>
-              <div className="bg-gray-800 rounded-xl p-4 mb-6">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Chave PIX</p>
-                <div className="flex items-center gap-2">
-                  <span className="flex-1 text-sm text-white font-mono truncate">{PIX_KEY}</span>
-                  <button
-                    onClick={handleCopyKey}
-                    className="shrink-0 flex items-center gap-1.5 text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 rounded-lg px-2 py-1 transition-all duration-200"
-                  >
-                    {copied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
-                    {copied ? 'Copiado!' : 'Copiar'}
-                  </button>
-                </div>
-              </div>
+              <p className="text-[11px] text-gray-500 mb-6 leading-relaxed">
+                Ao finalizar, um QR Code PIX será gerado para pagamento.
+              </p>
 
               <button
                 onClick={handleFinalize}
-                className="w-full py-3 rounded-xl font-semibold text-sm bg-green-500 text-black hover:bg-green-400 transition-colors duration-200"
+                disabled={updating}
+                className="w-full py-3 rounded-xl font-semibold text-sm bg-green-500 text-black hover:bg-green-400 transition-colors duration-200 disabled:opacity-60"
               >
-                Finalizar com PIX
+                {updating ? 'Processando...' : 'Finalizar com PIX'}
               </button>
             </div>
           </>
@@ -217,8 +313,10 @@ const CartContent = () => {
 }
 
 const Cart = () => {
-  const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <CartContent /> : <LoginRequired />
+  const { isAuthenticated, user } = useAuth()
+  return isAuthenticated && user?.id
+    ? <CartContent userId={user.id} />
+    : <LoginRequired />
 }
 
 export default Cart
